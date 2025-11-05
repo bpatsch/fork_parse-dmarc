@@ -2,11 +2,23 @@
   <div class="app">
     <header class="header">
       <div class="container">
-        <h1 class="title">
-          <span class="icon">🛡️</span>
-          DMARC Report Dashboard
-        </h1>
-        <p class="subtitle">Email Authentication & Compliance Monitoring</p>
+        <div class="header-top">
+          <div>
+            <h1 class="title">
+              <span class="icon">🛡️</span>
+              DMARC Report Dashboard
+            </h1>
+            <p class="subtitle">Email Authentication & Compliance Monitoring</p>
+          </div>
+          <button
+            class="refresh-button"
+            @click="refreshData"
+            :disabled="loading"
+          >
+            <span class="refresh-icon" :class="{ spinning: loading }">🔄</span>
+            <span>{{ loading ? "Refreshing..." : "Refresh" }}</span>
+          </button>
+        </div>
       </div>
     </header>
 
@@ -97,17 +109,47 @@
               <table class="report-table">
                 <thead>
                   <tr>
-                    <th>Organization</th>
-                    <th>Domain</th>
-                    <th>Date Range</th>
-                    <th>Messages</th>
-                    <th>Compliance</th>
-                    <th>Policy</th>
+                    <th @click="sortBy('org_name')" class="sortable">
+                      Organization
+                      <span class="sort-indicator">{{
+                        getSortIndicator("org_name")
+                      }}</span>
+                    </th>
+                    <th @click="sortBy('domain')" class="sortable">
+                      Domain
+                      <span class="sort-indicator">{{
+                        getSortIndicator("domain")
+                      }}</span>
+                    </th>
+                    <th @click="sortBy('date_begin')" class="sortable">
+                      Date Range
+                      <span class="sort-indicator">{{
+                        getSortIndicator("date_begin")
+                      }}</span>
+                    </th>
+                    <th @click="sortBy('total_messages')" class="sortable">
+                      Messages
+                      <span class="sort-indicator">{{
+                        getSortIndicator("total_messages")
+                      }}</span>
+                    </th>
+                    <th @click="sortBy('compliance_rate')" class="sortable">
+                      Compliance
+                      <span class="sort-indicator">{{
+                        getSortIndicator("compliance_rate")
+                      }}</span>
+                    </th>
+                    <th @click="sortBy('policy_p')" class="sortable">
+                      Policy
+                      <span class="sort-indicator">{{
+                        getSortIndicator("policy_p")
+                      }}</span>
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr
-                    v-for="report in reports"
+                    v-for="report in sortedReports"
                     :key="report.id"
                     class="report-row"
                     @click="viewReport(report)"
@@ -282,10 +324,6 @@
             +
             <a href="https://golang.org/" target="_blank" rel="noopener">Go</a>
           </p>
-          <p>
-            Docker:
-            <code class="docker-image">ghcr.io/meysam81/parse-dmarc</code>
-          </p>
         </div>
       </div>
     </footer>
@@ -293,7 +331,7 @@
 </template>
 
 <script>
-import { ref, onMounted } from "vue";
+import { computed, onMounted, ref } from "vue";
 
 export default {
   name: "App",
@@ -303,6 +341,8 @@ export default {
     var reports = ref([]);
     var selectedReport = ref(null);
     var loading = ref(true);
+    var sortColumn = ref(null);
+    var sortDirection = ref("asc");
 
     function fetchStatistics() {
       return fetch("/api/statistics")
@@ -396,6 +436,57 @@ export default {
       });
     }
 
+    function refreshData() {
+      loadData();
+    }
+
+    function sortBy(column) {
+      if (sortColumn.value === column) {
+        if (sortDirection.value === "asc") {
+          sortDirection.value = "desc";
+        } else {
+          sortColumn.value = null;
+          sortDirection.value = "asc";
+        }
+      } else {
+        sortColumn.value = column;
+        sortDirection.value = "asc";
+      }
+    }
+
+    function getSortIndicator(column) {
+      if (sortColumn.value !== column) {
+        return "";
+      }
+      return sortDirection.value === "asc" ? "↑" : "↓";
+    }
+
+    var sortedReports = computed(function () {
+      if (!sortColumn.value || !reports.value) {
+        return reports.value;
+      }
+
+      var sorted = [...reports.value].sort(function (a, b) {
+        var aVal = a[sortColumn.value];
+        var bVal = b[sortColumn.value];
+
+        if (typeof aVal === "string") {
+          aVal = aVal.toLowerCase();
+          bVal = bVal.toLowerCase();
+        }
+
+        if (aVal < bVal) {
+          return sortDirection.value === "asc" ? -1 : 1;
+        }
+        if (aVal > bVal) {
+          return sortDirection.value === "asc" ? 1 : -1;
+        }
+        return 0;
+      });
+
+      return sorted;
+    });
+
     onMounted(function () {
       loadData();
       setInterval(loadData, 5 * 60 * 1000);
@@ -407,6 +498,9 @@ export default {
       reports,
       selectedReport,
       loading,
+      sortColumn,
+      sortDirection,
+      sortedReports,
       viewReport,
       closeModal,
       formatNumber,
@@ -414,6 +508,9 @@ export default {
       getPassPercentage,
       getFailPercentage,
       getComplianceClass,
+      sortBy,
+      getSortIndicator,
+      refreshData,
     };
   },
 };
@@ -456,6 +553,59 @@ export default {
 .subtitle {
   font-size: 1.1rem;
   opacity: 0.9;
+}
+
+.header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 2rem;
+}
+
+.refresh-button {
+  background: rgba(255, 255, 255, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.3s;
+  white-space: nowrap;
+}
+
+.refresh-button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-2px);
+}
+
+.refresh-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.refresh-icon {
+  font-size: 1.2rem;
+  display: inline-block;
+  transition: transform 0.3s;
+}
+
+.refresh-icon.spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .main {
@@ -604,6 +754,16 @@ export default {
   font-weight: 600;
   color: #333;
   border-bottom: 2px solid #dee2e6;
+}
+
+.report-table th.sortable {
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.2s;
+}
+
+.report-table th.sortable:hover {
+  background: #e9ecef;
 }
 
 .report-table td {
@@ -826,13 +986,17 @@ code {
 .footer-section p {
   font-size: 0.85rem;
   color: rgba(255, 255, 255, 0.7);
-  margin: 0;
-}
+  .footer-content {
+    margin: 0;
+    -columns: 1fr;
+  }
 
-.footer-links {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+  .footer-links {
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+    gap: 0.5rem;
+  }
 }
 
 .footer-links a {
@@ -880,6 +1044,17 @@ code {
 @media (max-width: 768px) {
   .title {
     font-size: 1.75rem;
+  }
+
+  .header-top {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .refresh-button {
+    width: 100%;
+    justify-content: center;
   }
 
   .stats-grid {

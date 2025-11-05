@@ -21,6 +21,7 @@ export default defineConfig({
     minify: "esbuild",
     cssMinify: "lightningcss",
     cssCodeSplit: true,
+    reportCompressedSize: true,
     rollupOptions: {
       output: {
         manualChunks: function manualChunks(id) {
@@ -34,6 +35,8 @@ export default defineConfig({
     assetsInlineLimit: 4096,
   },
   server: {
+    port: 8000,
+    host: "::1",
     proxy: {
       "/api": {
         target: "http://localhost:8080",

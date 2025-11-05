@@ -54,3 +54,4 @@ Thumbs.db
 .goreleaser-dist
 
 data
+tmp
