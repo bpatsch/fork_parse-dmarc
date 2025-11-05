@@ -6,9 +6,12 @@ version: 2
 before:
   hooks:
     - go mod download
+    - cd frontend && bun install --frozen-lockfile && bun run build
 
 builds:
-  - env:
+  - main: ./cmd/parse-dmarc
+    binary: parse-dmarc
+    env:
       - CGO_ENABLED=0
     goos:
       - linux

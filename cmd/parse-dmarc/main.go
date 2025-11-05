@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -15,6 +16,13 @@ import (
 	"github.com/meysam81/parse-dmarc/internal/storage"
 )
 
+var (
+	version = "dev"
+	commit  = "none"
+	date    = "unknown"
+	builtBy = "unknown"
+)
+
 func main() {
 	var (
 		configPath    = flag.String("config", "config.json", "Path to configuration file")
@@ -22,8 +30,17 @@ func main() {
 		fetchOnce     = flag.Bool("fetch-once", false, "Fetch reports once and exit")
 		serveOnly     = flag.Bool("serve-only", false, "Only serve the dashboard without fetching")
 		fetchInterval = flag.Int("fetch-interval", 300, "Interval in seconds between fetch operations")
+		showVersion   = flag.Bool("version", false, "Show version information")
 	)
 	flag.Parse()
+
+	if *showVersion {
+		fmt.Printf("Version:    %s\n", version)
+		fmt.Printf("Commit:     %s\n", commit)
+		fmt.Printf("Build Date: %s\n", date)
+		fmt.Printf("Built By:   %s\n", builtBy)
+		return
+	}
 
 	// Generate sample config if requested
 	if *genConfig {

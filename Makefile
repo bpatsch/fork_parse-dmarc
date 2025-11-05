@@ -1,4 +1,4 @@
-.PHONY: all build frontend backend clean install-deps run dev test
+.PHONY: all build frontend backend backend-cgo clean install-deps run dev test
 
 all: build
 
@@ -16,12 +16,21 @@ frontend:
 
 # Build backend (with embedded frontend)
 backend: frontend
-	@echo "Building Go binary..."
-	go build -o bin/parse-dmarc ./cmd/parse-dmarc
+	@echo "Building Go binary (pure Go, no CGO)..."
+	CGO_ENABLED=0 go build -o bin/parse-dmarc ./cmd/parse-dmarc
+
+# Build backend with CGO (with embedded frontend)
+backend-cgo: frontend
+	@echo "Building Go binary (with CGO)..."
+	CGO_ENABLED=1 go build -tags cgo -o bin/parse-dmarc ./cmd/parse-dmarc
 
 # Full build
 build: frontend backend
 	@echo "Build complete! Binary available at ./bin/parse-dmarc"
+
+# Full CGO build
+build-cgo: frontend backend-cgo
+	@echo "CGO build complete! Binary available at ./bin/parse-dmarc"
 
 # Run in development mode
 dev:

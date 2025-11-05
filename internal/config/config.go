@@ -1,9 +1,10 @@
 package config
 
 import (
-	"encoding/json"
 	"os"
 	"path/filepath"
+
+	"github.com/goccy/go-json"
 )
 
 // Config holds the application configuration

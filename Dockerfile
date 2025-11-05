@@ -1,41 +1,48 @@
 # Build stage
-FROM node:18-alpine AS frontend-builder
+FROM oven/bun:1 AS frontend-builder
 
 WORKDIR /build/frontend
-COPY frontend/package*.json ./
-RUN npm install
+
+RUN --mount=type=bind,source=frontend/package.json,target=package.json \
+    --mount=type=bind,source=frontend/bun.lock,target=bun.lock \
+    --mount=type=cache,target=/root/.bun/install/cache \
+    bun install --frozen-lockfile
+
 COPY frontend/ ./
-RUN npm run build
+RUN bun run build
 
-# Go build stage
-FROM golang:1.21-alpine AS backend-builder
-
-RUN apk add --no-cache gcc musl-dev sqlite-dev
-
-WORKDIR /build
-COPY go.mod go.sum ./
-RUN go mod download
-
-COPY . .
-COPY --from=frontend-builder /build/internal/api/dist ./internal/api/dist
-
-RUN go build -o parse-dmarc ./cmd/parse-dmarc
-
-# Final stage
-FROM alpine:latest
-
-RUN apk add --no-cache ca-certificates sqlite-libs
+FROM golang:1.25 AS mod
 
 WORKDIR /app
 
-COPY --from=backend-builder /build/parse-dmarc .
+RUN --mount=type=bind,source=go.mod,target=go.mod \
+    --mount=type=bind,source=go.sum,target=go.sum \
+    --mount=type=cache,target=/go/pkg/mod \
+    go mod download
 
-# Create directory for database
-RUN mkdir -p /data
+FROM golang:1.25 AS backend-builder
 
-# Expose port
+ARG VERSION=dev
+ARG COMMIT=none
+ARG DATE=unknown
+ARG BUILT_BY=docker
+
+WORKDIR /app
+
+ENV CGO_ENABLED=0
+
+COPY . .
+COPY --from=frontend-builder /build/frontend/dist ./internal/api/dist
+
+RUN --mount=type=cache,target=/go/pkg/mod \
+    go build -ldflags="-s -w -extldflags '-static' -X main.version=${VERSION} -X main.commit=${COMMIT} -X main.date=${DATE} -X main.builtBy=${BUILT_BY}" -trimpath -o parse-dmarc ./cmd/parse-dmarc
+
+FROM scratch AS final
+
+COPY --from=backend-builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+COPY --from=backend-builder /app/parse-dmarc /app/parse-dmarc
+
 EXPOSE 8080
 
-# Run the application
 ENTRYPOINT ["/app/parse-dmarc"]
 CMD ["-config=/data/config.json"]

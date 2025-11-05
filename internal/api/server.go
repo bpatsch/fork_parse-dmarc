@@ -2,12 +2,13 @@ package api
 
 import (
 	"embed"
-	"encoding/json"
 	"fmt"
 	"io/fs"
 	"log"
 	"net/http"
 	"strconv"
+
+	"github.com/goccy/go-json"
 
 	"github.com/meysam81/parse-dmarc/internal/storage"
 )
