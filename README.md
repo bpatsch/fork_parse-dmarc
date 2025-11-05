@@ -2,6 +2,8 @@
 
 A minimal dependency Go application that parses DMARC aggregate reports and presents them in a delightful Vue.js dashboard. Built as a single binary, similar to [listmonk](https://listmonk.app/).
 
+[![Dashboard Screenshot](./assets/demo.png)](https://github.com/meysam81/parse-dmarc)
+
 ## Features
 
 - 📧 **IMAP Integration** - Automatically fetches DMARC reports from your email inbox
@@ -22,12 +24,14 @@ A minimal dependency Go application that parses DMARC aggregate reports and pres
 ### Installation
 
 1. Clone the repository:
+
 ```bash
 git clone https://github.com/meysam81/parse-dmarc.git
 cd parse-dmarc
 ```
 
 2. Install dependencies and build:
+
 ```bash
 make install-deps
 make build
@@ -38,11 +42,13 @@ The compiled binary will be at `./bin/parse-dmarc`.
 ### Configuration
 
 1. Generate a sample configuration file:
+
 ```bash
 ./bin/parse-dmarc -gen-config
 ```
 
 2. Edit `config.json` with your IMAP credentials:
+
 ```json
 {
   "imap": {
@@ -54,7 +60,7 @@ The compiled binary will be at `./bin/parse-dmarc`.
     "use_tls": true
   },
   "database": {
-    "path": "./dmarc.db"
+    "path": "~/.parse-dmarc/db.sqlite"
   },
   "server": {
     "port": 8080,
@@ -66,21 +72,25 @@ The compiled binary will be at `./bin/parse-dmarc`.
 ### Running
 
 **Fetch reports and start dashboard:**
+
 ```bash
 ./bin/parse-dmarc -config=config.json
 ```
 
 **Fetch once and exit:**
+
 ```bash
 ./bin/parse-dmarc -config=config.json -fetch-once
 ```
 
 **Only serve dashboard (no fetching):**
+
 ```bash
 ./bin/parse-dmarc -config=config.json -serve-only
 ```
 
 **Custom fetch interval:**
+
 ```bash
 ./bin/parse-dmarc -config=config.json -fetch-interval=600
 ```
@@ -128,6 +138,7 @@ The parser handles the complete DMARC aggregate report schema:
 ### Frontend Development
 
 Run frontend dev server with hot reload:
+
 ```bash
 make frontend-dev
 ```
@@ -135,6 +146,7 @@ make frontend-dev
 ### Backend Development
 
 Run backend in development mode:
+
 ```bash
 make dev
 ```
@@ -148,16 +160,19 @@ make test
 ## Building
 
 ### Build Everything
+
 ```bash
 make build
 ```
 
 ### Build Frontend Only
+
 ```bash
 make frontend
 ```
 
 ### Build Backend Only
+
 ```bash
 make backend
 ```
@@ -198,6 +213,7 @@ WantedBy=multi-user.target
 ```
 
 Enable and start:
+
 ```bash
 sudo systemctl enable parse-dmarc
 sudo systemctl start parse-dmarc
@@ -206,14 +222,17 @@ sudo systemctl start parse-dmarc
 ## IMAP Configuration Tips
 
 ### Gmail
+
 - Use [App Passwords](https://support.google.com/accounts/answer/185833)
 - Host: `imap.gmail.com`, Port: `993`
 
 ### Outlook/Office 365
+
 - Host: `outlook.office365.com`, Port: `993`
 - May require app password or OAuth (OAuth not yet supported)
 
 ### Generic IMAP
+
 - Most providers use port `993` for TLS
 - Check your email provider's IMAP settings
 

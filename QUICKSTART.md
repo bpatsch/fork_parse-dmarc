@@ -67,7 +67,7 @@ Edit `config.json` with your email server details:
     "use_tls": true
   },
   "database": {
-    "path": "./dmarc.db"
+    "path": "~/.parse-dmarc/db.sqlite"
   },
   "server": {
     "port": 8080,

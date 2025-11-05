@@ -3,6 +3,7 @@ package config
 import (
 	"encoding/json"
 	"os"
+	"path/filepath"
 )
 
 // Config holds the application configuration
@@ -33,6 +34,23 @@ type ServerConfig struct {
 	Host string `json:"host"`
 }
 
+func defaultDBPath() (string, error) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(home, ".parse-dmarc/db.sqlite"), nil
+}
+
+func ensureDBPathExists(dbPath string) error {
+	parent := filepath.Dir(dbPath)
+	err := os.MkdirAll(parent, 0755)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // Load loads configuration from a JSON file
 func Load(path string) (*Config, error) {
 	data, err := os.ReadFile(path)
@@ -56,7 +74,14 @@ func Load(path string) (*Config, error) {
 		cfg.IMAP.UseTLS = true
 	}
 	if cfg.Database.Path == "" {
-		cfg.Database.Path = "./dmarc.db"
+		cfg.Database.Path, err = defaultDBPath()
+		if err != nil {
+			return nil, err
+		}
+	}
+	err = ensureDBPathExists(cfg.Database.Path)
+	if err != nil {
+		return nil, err
 	}
 	if cfg.Server.Port == 0 {
 		cfg.Server.Port = 8080
@@ -70,6 +95,10 @@ func Load(path string) (*Config, error) {
 
 // GenerateSample creates a sample configuration file
 func GenerateSample(path string) error {
+	dbPath, err := defaultDBPath()
+	if err != nil {
+		return err
+	}
 	sample := Config{
 		IMAP: IMAPConfig{
 			Host:     "imap.example.com",
@@ -80,7 +109,7 @@ func GenerateSample(path string) error {
 			UseTLS:   true,
 		},
 		Database: DatabaseConfig{
-			Path: "./dmarc.db",
+			Path: dbPath,
 		},
 		Server: ServerConfig{
 			Port: 8080,

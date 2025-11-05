@@ -7,12 +7,12 @@ install-deps:
 	@echo "Installing Go dependencies..."
 	go mod tidy
 	@echo "Installing Node.js dependencies..."
-	cd frontend && npm install
+	cd frontend && bun install
 
 # Build frontend
 frontend:
 	@echo "Building frontend..."
-	cd frontend && npm run build
+	cd frontend && bun run build
 
 # Build backend (with embedded frontend)
 backend: frontend
@@ -38,7 +38,6 @@ clean:
 	rm -rf bin/
 	rm -rf internal/api/dist/
 	rm -rf frontend/node_modules/
-	rm -f dmarc.db
 	rm -f config.json
 
 # Run tests
@@ -52,4 +51,4 @@ install: build
 
 # Development frontend server
 frontend-dev:
-	cd frontend && npm run dev
+	cd frontend && bun run dev

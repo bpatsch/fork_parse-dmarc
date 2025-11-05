@@ -88,7 +88,7 @@ func (s *Storage) SaveReport(feedback *parser.Feedback) error {
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	// Insert report metadata
 	result, err := tx.Exec(`
@@ -165,16 +165,16 @@ func (s *Storage) SaveReport(feedback *parser.Feedback) error {
 
 // ReportSummary represents a summary of a report
 type ReportSummary struct {
-	ID                 int64  `json:"id"`
-	ReportID           string `json:"report_id"`
-	OrgName            string `json:"org_name"`
-	Domain             string `json:"domain"`
-	DateBegin          int64  `json:"date_begin"`
-	DateEnd            int64  `json:"date_end"`
-	TotalMessages      int    `json:"total_messages"`
-	CompliantMessages  int    `json:"compliant_messages"`
-	ComplianceRate     float64 `json:"compliance_rate"`
-	PolicyP            string `json:"policy_p"`
+	ID                int64   `json:"id"`
+	ReportID          string  `json:"report_id"`
+	OrgName           string  `json:"org_name"`
+	Domain            string  `json:"domain"`
+	DateBegin         int64   `json:"date_begin"`
+	DateEnd           int64   `json:"date_end"`
+	TotalMessages     int     `json:"total_messages"`
+	CompliantMessages int     `json:"compliant_messages"`
+	ComplianceRate    float64 `json:"compliance_rate"`
+	PolicyP           string  `json:"policy_p"`
 }
 
 // GetReports retrieves all reports
@@ -192,7 +192,7 @@ func (s *Storage) GetReports(limit, offset int) ([]ReportSummary, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var reports []ReportSummary
 	for rows.Next() {
@@ -235,12 +235,12 @@ func (s *Storage) GetReportByID(id int64) (*parser.Feedback, error) {
 
 // Statistics holds dashboard statistics
 type Statistics struct {
-	TotalReports       int     `json:"total_reports"`
-	TotalMessages      int     `json:"total_messages"`
-	CompliantMessages  int     `json:"compliant_messages"`
-	ComplianceRate     float64 `json:"compliance_rate"`
-	UniqueSourceIPs    int     `json:"unique_source_ips"`
-	UniqueDomains      int     `json:"unique_domains"`
+	TotalReports      int     `json:"total_reports"`
+	TotalMessages     int     `json:"total_messages"`
+	CompliantMessages int     `json:"compliant_messages"`
+	ComplianceRate    float64 `json:"compliance_rate"`
+	UniqueSourceIPs   int     `json:"unique_source_ips"`
+	UniqueDomains     int     `json:"unique_domains"`
 }
 
 // GetStatistics retrieves dashboard statistics
@@ -304,7 +304,7 @@ func (s *Storage) GetTopSourceIPs(limit int) ([]TopSourceIP, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var results []TopSourceIP
 	for rows.Next() {

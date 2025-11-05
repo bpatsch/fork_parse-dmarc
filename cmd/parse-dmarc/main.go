@@ -17,10 +17,10 @@ import (
 
 func main() {
 	var (
-		configPath  = flag.String("config", "config.json", "Path to configuration file")
-		genConfig   = flag.Bool("gen-config", false, "Generate sample configuration file")
-		fetchOnce   = flag.Bool("fetch-once", false, "Fetch reports once and exit")
-		serveOnly   = flag.Bool("serve-only", false, "Only serve the dashboard without fetching")
+		configPath    = flag.String("config", "config.json", "Path to configuration file")
+		genConfig     = flag.Bool("gen-config", false, "Generate sample configuration file")
+		fetchOnce     = flag.Bool("fetch-once", false, "Fetch reports once and exit")
+		serveOnly     = flag.Bool("serve-only", false, "Only serve the dashboard without fetching")
 		fetchInterval = flag.Int("fetch-interval", 300, "Interval in seconds between fetch operations")
 	)
 	flag.Parse()
@@ -45,7 +45,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to initialize storage: %v", err)
 	}
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	// Start API server in background
 	server := api.NewServer(store, cfg.Server.Host, cfg.Server.Port)
@@ -108,7 +108,7 @@ func fetchReports(cfg *config.Config, store *storage.Storage) error {
 	if err := client.Connect(); err != nil {
 		return err
 	}
-	defer client.Disconnect()
+	defer func() { _ = client.Disconnect() }()
 
 	// Fetch reports
 	reports, err := client.FetchDMARCReports()

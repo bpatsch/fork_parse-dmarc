@@ -48,7 +48,7 @@ func (c *Client) Connect() error {
 
 	// Login
 	if err := c.client.Login(c.config.Username, c.config.Password); err != nil {
-		c.client.Logout()
+		_ = c.client.Logout()
 		return fmt.Errorf("login failed: %w", err)
 	}
 

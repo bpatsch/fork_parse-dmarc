@@ -49,7 +49,7 @@ func (s *Server) Start() error {
 		mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 			if r.URL.Path == "/" {
 				w.Header().Set("Content-Type", "text/html")
-				fmt.Fprintf(w, `
+				_, _ = fmt.Fprintf(w, `
 					<!DOCTYPE html>
 					<html>
 					<head><title>DMARC Dashboard</title></head>
