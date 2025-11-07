@@ -1,19 +1,40 @@
 {
+  "author": "Meysam Azad",
   "dependencies": {
     "vue": "^3.5.22"
   },
+  "description": "DMARC Report Parser and Dashboard",
   "devDependencies": {
     "@vitejs/plugin-vue": "^6.0.1",
     "lightningcss": "^1.30.2",
+    "loglevel": "^1.9.2",
+    "sharp": "^0.33.5",
     "vite": "^7.2.0",
     "vite-plugin-compression2": "^2.3.1"
   },
-  "name": "parse-dmarc-frontend",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "dmarc",
+    "email",
+    "security",
+    "authentication",
+    "spf",
+    "dkim"
+  ],
+  "license": "Apache-2.0",
+  "name": "parse-dmarc",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/meysam81/parse-dmarc.git"
+  },
   "scripts": {
     "build": "vite build",
     "dev": "vite",
+    "prebuild": "./scripts/convert-svg-to-png.js",
     "preview": "vite preview"
   },
   "type": "module",
-  "version": "1.0.0"
+  "version": "1.0.1"
 }
