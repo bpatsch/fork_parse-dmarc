@@ -26,9 +26,7 @@ jobs:
           mkdir -p internal/api/dist
           echo '<h1>Parse-DMARC API</h1>' > internal/api/dist/index.html
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v8
-        with:
-          version: v2.1
+        uses: golangci/golangci-lint-action@v9
 
   build-dev:
     runs-on: ubuntu-latest
