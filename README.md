@@ -103,7 +103,7 @@ docker run -d \
   -p 8080:8080 \
   -v $(pwd)/config.json:/app/config.json \
   -v parse-dmarc-data:/data \
-  ghcr.io/meysam81/parse-dmarc:v1
+  ghcr.io/meysam81/parse-dmarc:v1.2.0
 ```
 
 **Access the dashboard:** Open `http://localhost:8080` in your browser.
