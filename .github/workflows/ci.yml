@@ -142,6 +142,7 @@ jobs:
           kubescape: true
       - env:
           GITHUB_TOKEN: ${{ github.token }}
+          HOMEBREW_TAP_GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}
         name: Run goreleaser
         run: goreleaser release --release-notes CHANGELOG.md --clean
 
