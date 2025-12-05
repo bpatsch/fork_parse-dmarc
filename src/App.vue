@@ -63,31 +63,6 @@
           </div>
         </div>
 
-        <!-- DNS Generator Section -->
-        <div class="section">
-          <div class="section-header">
-            <h2 class="section-title">
-              <button
-                class="section-toggle"
-                @click="toggleDnsGenerator"
-                :aria-expanded="showDnsGenerator"
-                aria-controls="dns-generator-content"
-              >
-                <span class="toggle-icon">{{
-                  showDnsGenerator ? "▼" : "▶"
-                }}</span>
-                DMARC Record Generator
-              </button>
-            </h2>
-            <span class="section-badge" v-if="!showDnsGenerator"
-              >Click to expand</span
-            >
-          </div>
-          <div v-if="showDnsGenerator" id="dns-generator-content">
-            <DnsGenerator />
-          </div>
-        </div>
-
         <!-- Top Sources -->
         <div class="section">
           <h2 class="section-title">Top Sending Sources</h2>
@@ -370,13 +345,10 @@
 
 <script>
 import { computed, onMounted, ref, watchEffect } from "vue";
-import DnsGenerator from "./components/DnsGenerator.vue";
 
 export default {
   name: "App",
-  components: {
-    DnsGenerator,
-  },
+  components: {},
   setup() {
     var statistics = ref(null);
     var topSources = ref([]);
@@ -387,11 +359,6 @@ export default {
     var sortDirection = ref("asc");
     var starBannerVisible = ref(true);
     var theme = ref("light");
-    var showDnsGenerator = ref(false);
-
-    function toggleDnsGenerator() {
-      showDnsGenerator.value = !showDnsGenerator.value;
-    }
 
     function fetchStatistics() {
       return fetch("/api/statistics")
@@ -601,7 +568,6 @@ export default {
       getSortIndicator,
       refreshData,
       dismissStarBanner,
-      showDnsGenerator,
     };
   },
 };
