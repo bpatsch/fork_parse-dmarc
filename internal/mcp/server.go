@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/meysam81/parse-dmarc/internal/mcp/oauth"
 	"github.com/meysam81/parse-dmarc/internal/storage"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/rs/zerolog"
@@ -28,6 +29,8 @@ type Config struct {
 	Version string
 	// Logger for the server
 	Logger *zerolog.Logger
+	// OAuth holds OAuth2 configuration for protected HTTP endpoints.
+	OAuth *oauth.Config
 }
 
 // NewServer creates a new MCP server with all DMARC tools registered.
@@ -129,10 +132,45 @@ func (s *Server) RunStdio(ctx context.Context) error {
 }
 
 // RunHTTP runs the MCP server over HTTP/SSE transport.
-func (s *Server) RunHTTP(ctx context.Context, addr string) error {
-	handler := mcp.NewStreamableHTTPHandler(func(*http.Request) *mcp.Server {
+func (s *Server) RunHTTP(ctx context.Context, addr string, oauthCfg *oauth.Config) error {
+	mcpHandler := mcp.NewStreamableHTTPHandler(func(*http.Request) *mcp.Server {
 		return s.mcpServer
 	}, nil)
+
+	// Build the HTTP handler with optional OAuth middleware
+	var handler http.Handler = mcpHandler
+
+	// Create a mux to handle both the MCP endpoint and the metadata endpoint
+	mux := http.NewServeMux()
+
+	// Check if OAuth is enabled and properly configured
+	if oauthCfg != nil && oauthCfg.Enabled {
+		if err := oauthCfg.Validate(); err != nil {
+			return fmt.Errorf("OAuth config validation failed: %w", err)
+		}
+
+		// Register the Protected Resource Metadata endpoint (RFC 9728)
+		mux.Handle(oauth.MetadataPath, oauth.MetadataHandler(oauthCfg))
+
+		// Create the token verifier and middleware
+		verifier := oauth.NewVerifier(oauthCfg)
+		authMiddleware := oauth.NewBearerAuthMiddleware(oauthCfg, verifier, s.logger)
+
+		// Wrap the MCP handler with auth middleware
+		handler = authMiddleware.Wrap(mcpHandler)
+
+		if s.logger != nil {
+			s.logger.Info().
+				Str("issuer", oauthCfg.Issuer).
+				Str("audience", oauthCfg.Audience).
+				Strs("scopes", oauthCfg.RequiredScopes).
+				Str("metadata_url", oauth.GetMetadataURL(oauthCfg.ResourceServerURL)).
+				Msg("OAuth2 authentication enabled")
+		}
+	}
+
+	// Register the MCP handler (with or without auth middleware)
+	mux.Handle("/", handler)
 
 	if s.logger != nil {
 		s.logger.Info().Str("addr", addr).Msg("starting MCP server over HTTP")
@@ -140,7 +178,7 @@ func (s *Server) RunHTTP(ctx context.Context, addr string) error {
 
 	server := &http.Server{
 		Addr:           addr,
-		Handler:        handler,
+		Handler:        mux,
 		ReadTimeout:    15 * time.Second,
 		WriteTimeout:   15 * time.Second,
 		IdleTimeout:    60 * time.Second,

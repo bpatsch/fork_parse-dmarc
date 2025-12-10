@@ -4,6 +4,7 @@ go 1.25.4
 
 require (
 	github.com/caarlos0/env/v11 v11.3.1
+	github.com/coreos/go-oidc/v3 v3.11.0
 	github.com/emersion/go-imap v1.2.1
 	github.com/emersion/go-message v0.18.2
 	github.com/goccy/go-json v0.10.5
@@ -12,6 +13,7 @@ require (
 	github.com/prometheus/client_golang v1.23.2
 	github.com/rs/zerolog v1.34.0
 	github.com/urfave/cli/v3 v3.5.0
+	golang.org/x/oauth2 v0.24.0
 	modernc.org/sqlite v1.40.0
 )
 
