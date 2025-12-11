@@ -106,6 +106,8 @@ func (v *OIDCVerifier) Verify(ctx context.Context, token string) (*TokenInfo, er
 				audience = append(audience, s)
 			}
 		}
+	default:
+		return nil, fmt.Errorf("unexpected type for audience claim: %T", claims.Audience)
 	}
 
 	// Parse scopes (space-separated string)
