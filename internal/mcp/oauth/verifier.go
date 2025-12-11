@@ -234,6 +234,8 @@ func (v *IntrospectionVerifier) Verify(ctx context.Context, token string) (*Toke
 				audience = append(audience, s)
 			}
 		}
+	default:
+		return nil, fmt.Errorf("unexpected type for audience claim: %T", ir.Audience)
 	}
 
 	// Parse scopes
