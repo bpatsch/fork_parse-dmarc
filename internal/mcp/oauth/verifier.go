@@ -40,14 +40,14 @@ func NewOIDCVerifier(cfg *Config) *OIDCVerifier {
 
 func (v *OIDCVerifier) init(ctx context.Context) error {
 	v.initOnce.Do(func() {
-		httpClient := http.DefaultClient
-		if v.config.InsecureSkipVerify {
-			httpClient = &http.Client{
-				Timeout: 30 * time.Second,
-				Transport: &http.Transport{
-					TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		// Always use a custom HTTP client with a timeout.
+		httpClient := &http.Client{
+			Timeout: 30 * time.Second,
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{
+					InsecureSkipVerify: v.config.InsecureSkipVerify,
 				},
-			}
+			},
 		}
 
 		ctx = oidc.ClientContext(ctx, httpClient)
