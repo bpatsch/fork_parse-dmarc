@@ -134,7 +134,7 @@ dockers_v2:
       - ./
     labels:
       "org.opencontainers.image.created": "{{.Date}}"
-      "org.opencontainers.image.description": "{{.ReleaseNotes}}"
+      "org.opencontainers.image.description": "🛡️ A lightweight, self-hosted DMARC report parser with a beautiful Vue.js dashboard. Single-binary deployment with IMAP integration, SQLite storage, and RFC 7489 compliance. Built with Go and Vue 3 - no external dependencies required."
       "org.opencontainers.image.name": "{{.ProjectName}}"
       "org.opencontainers.image.revision": "{{.FullCommit}}"
       "org.opencontainers.image.source": "{{.GitURL}}"
@@ -146,7 +146,7 @@ dockers_v2:
       - linux/amd64
       - linux/arm64
     disable: "{{ .IsSnapshot }}"
-    sbom: "{{ not .IsNightly }}"
+    sbom: "{{ not .Env.DISABLE_SBOM }}"
     build_args:
       VERSION: "{{.Version}}"
       COMMIT: "{{.FullCommit}}"
