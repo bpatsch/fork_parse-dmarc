@@ -152,6 +152,10 @@ dockers_v2:
 
 docker_signs:
   - id: default
+    args:
+      - "sign"
+      - "--yes"
+      - "${artifact}"
     cmd: cosign
     output: true
 
