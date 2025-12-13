@@ -122,6 +122,7 @@ binary_signs:
 
 dockers_v2:
   - images:
+      - meysam81/{{ .ProjectName }}
       - ghcr.io/meysam81/{{ .ProjectName }}
     tags:
       - "v{{ .Version }}"
@@ -144,8 +145,8 @@ dockers_v2:
     platforms:
       - linux/amd64
       - linux/arm64
-    # disable: "{{ .IsSnapshot }}"
-    sbom: "{{ not .IsNightly }}"
+    disable: "{{ .IsSnapshot }}"
+    sbom: false
     build_args:
       VERSION: "{{.Version}}"
       COMMIT: "{{.FullCommit}}"
