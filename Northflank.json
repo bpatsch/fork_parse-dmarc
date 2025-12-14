@@ -1,0 +1,102 @@
+{
+  "apiVersion": "v1.2",
+  "spec": {
+    "kind": "Workflow",
+    "spec": {
+      "steps": [
+        {
+          "kind": "Volume",
+          "ref": "parse-dmarc-data",
+          "spec": {
+            "attachedObjects": [
+              {
+                "id": "${refs.parse-dmarc.id}",
+                "type": "service"
+              }
+            ],
+            "mounts": [
+              {
+                "containerMountPath": "/data"
+              }
+            ],
+            "name": "parse-dmarc-data",
+            "spec": {
+              "accessMode": "ReadWriteOnce",
+              "storageSize": 1024
+            }
+          }
+        },
+        {
+          "kind": "DeploymentService",
+          "ref": "parse-dmarc",
+          "spec": {
+            "billing": {
+              "deploymentPlan": "nf-compute-10"
+            },
+            "deployment": {
+              "docker": {
+                "configType": "default"
+              },
+              "external": {
+                "imagePath": "docker.io/meysam81/parse-dmarc:v1"
+              },
+              "instances": 1,
+              "storage": {
+                "ephemeralStorage": {
+                  "storageSize": 1024
+                },
+                "shmSize": 64
+              }
+            },
+            "healthChecks": [
+              {
+                "failureThreshold": 3,
+                "initialDelaySeconds": 5,
+                "path": "/api/statistics",
+                "periodSeconds": 60,
+                "port": 8080,
+                "protocol": "HTTP",
+                "successThreshold": 1,
+                "timeoutSeconds": 10,
+                "type": "readinessProbe"
+              }
+            ],
+            "infrastructure": {
+              "architecture": "x86"
+            },
+            "loadBalancing": {
+              "mode": "leastConnection"
+            },
+            "name": "Parse DMARC",
+            "ports": [
+              {
+                "disableNfDomain": false,
+                "domains": [],
+                "internalPort": 8080,
+                "name": "http",
+                "protocol": "HTTP",
+                "public": true,
+                "security": {
+                  "credentials": [],
+                  "policies": []
+                }
+              }
+            ],
+            "runtimeEnvironment": {
+              "DATABASE_PATH": "/data/db.sqlite",
+              "IMAP_HOST": "${args.IMAP_HOST}",
+              "IMAP_MAILBOX": "INBOX",
+              "IMAP_PASSWORD": "${args.IMAP_PASSWORD}",
+              "IMAP_PORT": "993",
+              "IMAP_USERNAME": "${args.IMAP_USERNAME}",
+              "IMAP_USE_TLS": "true",
+              "SERVER_PORT": "8080"
+            },
+            "runtimeFiles": {}
+          }
+        }
+      ],
+      "type": "sequential"
+    }
+  }
+}
