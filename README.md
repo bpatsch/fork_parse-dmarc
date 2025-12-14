@@ -15,6 +15,43 @@
 
 [![Dashboard Screenshot](./assets/demo.png)](https://github.com/meysam81/parse-dmarc)
 
+## Deploy Your Own Instance
+
+Deploy Parse DMARC to your favorite cloud provider with one click:
+
+### Platform as a Service (PaaS)
+
+| Provider    | Deploy                                                                                                                                               | Notes                                                     |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| **Railway** | [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/4kqQ_I?referralCode=meysam)                                        | Recommended for beginners                                 |
+| **Render**  | [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/meysam81/parse-dmarc) | Free tier available                                       |
+| **Koyeb**   | [![Deploy to Koyeb](https://www.koyeb.com/static/images/deploy/button.svg)][koyeb-1click]                                                            | Global edge deployment. Manually mount `/data` as volume. |
+
+<!--
+| **Zeabur**     | [![Deploy on Zeabur](https://zeabur.com/button.svg)](https://zeabur.com/templates/parse-dmarc)                                                                            | Asia-Pacific optimized    |
+| **Northflank** | [![Deploy to Northflank](https://northflank.com/button.svg)](https://app.northflank.com/s/account/templates/new?externalTemplateId=parse-dmarc)                           | Developer-focused         |
+| **Fly.io**     | [![Deploy to Fly.io](https://img.shields.io/badge/Deploy-Fly.io-7B3FE4?style=for-the-badge&logo=fly.io)](https://fly.io/launch?image=ghcr.io/meysam81/parse-dmarc:latest) | Edge computing            |
+
+### Enterprise Cloud
+
+| Provider                 | Deploy                                                                                                                                                                                                                          | Notes                 |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
+| **Google Cloud Run**     | [![Run on Google Cloud](https://deploy.cloud.run/button.svg)](https://deploy.cloud.run?git_repo=https://github.com/meysam81/parse-dmarc)                                                                                        | Serverless containers |
+| **Azure Container Apps** | [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fmeysam81%2Fparse-dmarc%2Fmain%2Fdeploy%2Fazure-container-apps.bicep) | Microsoft Azure       |
+
+### Self-Hosted
+
+| Provider     | Deploy                                                                                                                                                                   | Notes                          |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------ |
+| **CapRover** | [![Deploy to CapRover](https://img.shields.io/badge/Deploy-CapRover-0072CE?style=for-the-badge&logo=docker)](https://github.com/meysam81/parse-dmarc)                    | Self-hosted PaaS               |
+| **Coolify**  | [![Deploy to Coolify](https://img.shields.io/badge/Deploy-Coolify-6B46C1?style=for-the-badge&logo=docker)](https://github.com/meysam81/parse-dmarc)                      | Open-source Heroku alternative |
+| **Docker**   | [![Docker](https://img.shields.io/badge/Docker-Pull%20Image-2496ED?style=for-the-badge&logo=docker)](https://github.com/meysam81/parse-dmarc/pkgs/container/parse-dmarc) | Run anywhere                   |
+
+> **Note**: All deployments require IMAP credentials. See [Configuration](#configuration-options) for details on setting up Gmail, Outlook, or other email providers.
+
+See the [`deploy/`](./deploy/) directory for provider-specific configuration files and templates.
+-->
+
 ## Why Do I Need This?
 
 **DMARC** (Domain-based Message Authentication, Reporting & Conformance) helps protect your domain from email spoofing and phishing. When you enable DMARC on your domain, email providers like Gmail, Outlook, and Yahoo send you **aggregate reports** showing:
@@ -594,3 +631,5 @@ Apache-2.0 - see [LICENSE](LICENSE) for details.
 ---
 
 **Found this useful? Star the repo!** ⭐
+
+[koyeb-1click]: https://app.koyeb.com/deploy?name=parse-dmarc&type=docker&image=docker.io%2Fmeysam81%2Fparse-dmarc%3Alatest&regions=fra&env%5BDATABASE_PATH%5D=%2Fdata%2Fdb.sqlite&env%5BIMAP_HOST%5D=&env%5BIMAP_MAILBOX%5D=INBOX&env%5BIMAP_PASSWORD%5D=&env%5BIMAP_PORT%5D=993&env%5BIMAP_USERNAME%5D=&env%5BIMAP_USE_TLS%5D=true&env%5BSERVER_PORT%5D=8080&ports=8080%3Bhttp%3B%2F&hc_protocol%5B8080%5D=http&hc_grace_period%5B8080%5D=5&hc_interval%5B8080%5D=30&hc_restart_limit%5B8080%5D=3&hc_timeout%5B8080%5D=5&hc_path%5B8080%5D=%2Fapi%2Fstatistics&hc_method%5B8080%5D=get

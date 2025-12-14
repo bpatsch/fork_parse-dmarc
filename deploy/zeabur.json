@@ -1,0 +1,75 @@
+{
+  "$schema": "https://schema.zeabur.app/template.json",
+  "description": "DMARC Report Parser - Monitor who's sending email on behalf of your domain",
+  "icon": "https://raw.githubusercontent.com/meysam81/parse-dmarc/main/public/android-chrome-192x192.png",
+  "name": "parse-dmarc",
+  "services": [
+    {
+      "env": {
+        "DATABASE_PATH": {
+          "default": "/data/db.sqlite",
+          "expose": true
+        },
+        "IMAP_HOST": {
+          "default": "",
+          "expose": true,
+          "required": true
+        },
+        "IMAP_MAILBOX": {
+          "default": "INBOX",
+          "expose": true
+        },
+        "IMAP_PASSWORD": {
+          "default": "",
+          "expose": true,
+          "required": true
+        },
+        "IMAP_PORT": {
+          "default": "993",
+          "expose": true
+        },
+        "IMAP_USERNAME": {
+          "default": "",
+          "expose": true,
+          "required": true
+        },
+        "IMAP_USE_TLS": {
+          "default": "true",
+          "expose": true
+        },
+        "SERVER_HOST": {
+          "default": "0.0.0.0",
+          "expose": true
+        },
+        "SERVER_PORT": {
+          "default": "8080",
+          "expose": true
+        }
+      },
+      "name": "parse-dmarc",
+      "ports": [
+        {
+          "id": "web",
+          "port": 8080,
+          "type": "HTTP"
+        }
+      ],
+      "source": {
+        "image": "ghcr.io/meysam81/parse-dmarc:latest"
+      },
+      "template": "PREBUILT",
+      "volumes": [
+        {
+          "dir": "/data",
+          "id": "data"
+        }
+      ]
+    }
+  ],
+  "tags": [
+    "dmarc",
+    "email",
+    "security",
+    "monitoring"
+  ]
+}
