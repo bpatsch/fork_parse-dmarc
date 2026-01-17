@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.4.4](https://github.com/meysam81/parse-dmarc/compare/v1.4.3...v1.4.4) (2026-01-17)
+
+
+### Bug Fixes
+
+* **CI:** remove changelog from release note ([127cb80](https://github.com/meysam81/parse-dmarc/commit/127cb800f3f285b2d5899561fa390e2894bd52de))
+* switch env and json config parsing order ([#83](https://github.com/meysam81/parse-dmarc/issues/83)) ([12afcd2](https://github.com/meysam81/parse-dmarc/commit/12afcd2e295c31b60a4696ba5c80edac1ae424e2)), closes [#84](https://github.com/meysam81/parse-dmarc/issues/84)
+
 ## [1.4.3](https://github.com/meysam81/parse-dmarc/compare/v1.4.2...v1.4.3) (2025-12-21)
 
 
