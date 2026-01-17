@@ -75,6 +75,10 @@ func Load(path string) (*Config, error) {
 	var cfg Config
 	var err error
 
+	if err := env.Parse(&cfg); err != nil {
+		return nil, err
+	}
+
 	if _, err := os.Stat(path); err == nil {
 		data, err := os.ReadFile(path)
 		if err != nil {
@@ -84,10 +88,6 @@ func Load(path string) (*Config, error) {
 		if err := json.Unmarshal(data, &cfg); err != nil {
 			return nil, err
 		}
-	}
-
-	if err := env.Parse(&cfg); err != nil {
-		return nil, err
 	}
 
 	if cfg.IMAP.Port == 0 {
