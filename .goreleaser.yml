@@ -117,7 +117,7 @@ binary_signs:
       - "--yes"
     certificate: ${artifact}_{{- tolower .Os }}_{{- if eq .Arch "386" }}i386{{- else }}{{ .Arch }}{{ end }}{{- if .Arm }}v{{ .Arm }}{{ end }}.pem
     cmd: cosign
-    output: true
+    output: false
     signature: ${artifact}_{{- tolower .Os }}_{{- if eq .Arch "386" }}i386{{- else }}{{ .Arch }}{{ end }}{{- if .Arm }}v{{ .Arm }}{{ end }}.sig
 
 dockers_v2:
@@ -179,20 +179,10 @@ mcp:
     - registry_type: oci
       identifier: "ghcr.io/meysam81/parse-dmarc:{{ .Version }}"
       transport:
-        type: streamable-http
+        type: local
   disable: false
 
 report_sizes: true
-
-sboms:
-  - artifacts: archive
-    documents:
-      - ${artifact}_{{- tolower .Os }}_{{- if eq .Arch "386" }}i386{{- else }}{{ .Arch }}{{ end }}{{- if .Arm }}v{{ .Arm }}{{ end }}_sbom.spdx.json
-    id: archive
-  - artifacts: source
-    documents:
-      - ${artifact}_{{- tolower .Os }}_{{- if eq .Arch "386" }}i386{{- else }}{{ .Arch }}{{ end }}{{- if .Arm }}v{{ .Arm }}{{ end }}_src_sbom.spdx.json
-    id: source
 
 milestones:
   - close: true
