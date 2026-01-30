@@ -130,7 +130,7 @@ const statusSubtext = computed(() => {
           </div>
         </div>
 
-        <div class="health-score">
+        <div class="health-score" v-if="hasData">
           <span class="score-val">{{ complianceScore.toFixed(1) }}%</span>
           <span class="score-label">Pass Rate</span>
         </div>
