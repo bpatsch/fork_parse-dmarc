@@ -14,34 +14,35 @@ func TestGetStatistics_HasData(t *testing.T) {
 	}
 	defer storage.Close()
 
-	// Test case 1: Empty database - HasData should be false
-	stats, err := storage.GetStatistics()
-	if err != nil {
-		t.Fatalf("Failed to get statistics: %v", err)
-	}
+	t.Run("empty database", func(t *testing.T) {
+		stats, err := storage.GetStatistics()
+		if err != nil {
+			t.Fatalf("Failed to get statistics: %v", err)
+		}
 
-	if stats.HasData {
-		t.Errorf("Expected HasData to be false for empty database, got true")
-	}
+		if stats.HasData {
+			t.Errorf("Expected HasData to be false for empty database, got true")
+		}
 
-	if stats.TotalReports != 0 {
-		t.Errorf("Expected TotalReports to be 0, got %d", stats.TotalReports)
-	}
+		if stats.TotalReports != 0 {
+			t.Errorf("Expected TotalReports to be 0, got %d", stats.TotalReports)
+		}
 
-	if stats.TotalMessages != 0 {
-		t.Errorf("Expected TotalMessages to be 0, got %d", stats.TotalMessages)
-	}
+		if stats.TotalMessages != 0 {
+			t.Errorf("Expected TotalMessages to be 0, got %d", stats.TotalMessages)
+		}
 
-	if stats.CompliantMessages != 0 {
-		t.Errorf("Expected CompliantMessages to be 0, got %d", stats.CompliantMessages)
-	}
+		if stats.CompliantMessages != 0 {
+			t.Errorf("Expected CompliantMessages to be 0, got %d", stats.CompliantMessages)
+		}
 
-	if stats.ComplianceRate != 0 {
-		t.Errorf("Expected ComplianceRate to be 0, got %f", stats.ComplianceRate)
-	}
+		if stats.ComplianceRate != 0 {
+			t.Errorf("Expected ComplianceRate to be 0, got %f", stats.ComplianceRate)
+		}
+	})
 
-	// Test case 2: Database with report - HasData should be true
-	xmlData := `<?xml version="1.0" encoding="UTF-8"?>
+	t.Run("database with report", func(t *testing.T) {
+		xmlData := `<?xml version="1.0" encoding="UTF-8"?>
 <feedback>
   <version>1.0</version>
   <report_metadata>
@@ -87,40 +88,39 @@ func TestGetStatistics_HasData(t *testing.T) {
   </record>
 </feedback>`
 
-	feedback, err := parser.ParseReport([]byte(xmlData))
-	if err != nil {
-		t.Fatalf("Failed to parse report: %v", err)
-	}
+		feedback, err := parser.ParseReport([]byte(xmlData))
+		if err != nil {
+			t.Fatalf("Failed to parse report: %v", err)
+		}
 
-	err = storage.SaveReport(feedback)
-	if err != nil {
-		t.Fatalf("Failed to save report: %v", err)
-	}
+		err = storage.SaveReport(feedback)
+		if err != nil {
+			t.Fatalf("Failed to save report: %v", err)
+		}
 
-	// Get statistics after adding a report
-	stats, err = storage.GetStatistics()
-	if err != nil {
-		t.Fatalf("Failed to get statistics after adding report: %v", err)
-	}
+		stats, err := storage.GetStatistics()
+		if err != nil {
+			t.Fatalf("Failed to get statistics after adding report: %v", err)
+		}
 
-	if !stats.HasData {
-		t.Errorf("Expected HasData to be true after adding report, got false")
-	}
+		if !stats.HasData {
+			t.Errorf("Expected HasData to be true after adding report, got false")
+		}
 
-	if stats.TotalReports != 1 {
-		t.Errorf("Expected TotalReports to be 1, got %d", stats.TotalReports)
-	}
+		if stats.TotalReports != 1 {
+			t.Errorf("Expected TotalReports to be 1, got %d", stats.TotalReports)
+		}
 
-	if stats.TotalMessages != 100 {
-		t.Errorf("Expected TotalMessages to be 100, got %d", stats.TotalMessages)
-	}
+		if stats.TotalMessages != 100 {
+			t.Errorf("Expected TotalMessages to be 100, got %d", stats.TotalMessages)
+		}
 
-	if stats.CompliantMessages != 100 {
-		t.Errorf("Expected CompliantMessages to be 100, got %d", stats.CompliantMessages)
-	}
+		if stats.CompliantMessages != 100 {
+			t.Errorf("Expected CompliantMessages to be 100, got %d", stats.CompliantMessages)
+		}
 
-	if stats.ComplianceRate != 100.0 {
-		t.Errorf("Expected ComplianceRate to be 100.0, got %f", stats.ComplianceRate)
-	}
+		if stats.ComplianceRate != 100.0 {
+			t.Errorf("Expected ComplianceRate to be 100.0, got %f", stats.ComplianceRate)
+		}
+	})
 }
-
