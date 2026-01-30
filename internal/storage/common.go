@@ -195,7 +195,6 @@ func (s *Storage) GetStatistics() (*Statistics, error) {
 		return nil, err
 	}
 
-	// Set HasData flag - true if we have any reports
 	stats.HasData = stats.TotalReports > 0
 
 	if stats.TotalMessages > 0 {
