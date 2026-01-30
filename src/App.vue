@@ -100,6 +100,10 @@ const sourceCount = computed(() => {
   return statistics.value?.unique_source_ips ?? 0;
 });
 
+const hasData = computed(() => {
+  return statistics.value?.has_data ?? false;
+});
+
 // Helpers
 const getPassPercentage = (source) => {
   const total = source.count;
@@ -280,6 +284,7 @@ onUnmounted(() => {
             :compliance-score="complianceScore"
             :volume="totalVolume"
             :source-count="sourceCount"
+            :has-data="hasData"
             :loading="loading"
             @refresh="refreshData"
           />
