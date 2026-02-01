@@ -108,22 +108,23 @@ release:
 
     **Full Changelog**: https://github.com/meysam81/{{ .ProjectName }}/compare/{{ .PreviousTag }}...{{ .Tag }}
 
-binary_signs:
-  - args:
-      - sign-blob
-      - "--output-signature=${signature}"
-      - "--output-certificate=${certificate}"
-      - ${artifact}
-      - "--yes"
-    certificate: ${artifact}_{{- tolower .Os }}_{{- if eq .Arch "386" }}i386{{- else }}{{ .Arch }}{{ end }}{{- if .Arm }}v{{ .Arm }}{{ end }}.pem
-    cmd: cosign
-    output: false
-    signature: ${artifact}_{{- tolower .Os }}_{{- if eq .Arch "386" }}i386{{- else }}{{ .Arch }}{{ end }}{{- if .Arm }}v{{ .Arm }}{{ end }}.sig
+#binary_signs:
+#  - args:
+#      - sign-blob
+#      - "--output-signature=${signature}"
+#      - "--output-certificate=${certificate}"
+#      - ${artifact}
+#      - "--yes"
+#    certificate: ${artifact}_{{- tolower .Os }}_{{- if eq .Arch "386" }}i386{{- else }}{{ .Arch }}{{ end }}{{- if .Arm }}v{{ .Arm }}{{ end }}.0 0 * * *pem
+#    cmd: cosign
+#    output: false
+#    signature: ${artifact}_{{- tolower .Os }}_{{- if eq .Arch "386" }}i386{{- else }}{{ .Arch }}{{ end }}{{- if .Arm }}v{{ .Arm }}{{ end }}.sig
 
 dockers_v2:
   - images:
       - meysam81/{{ .ProjectName }}
       - ghcr.io/meysam81/{{ .ProjectName }}
+    dockerfile: Dockerfile.goreleaser
     tags:
       - "{{ if not .IsSnapshot }}v{{ .Version }}{{ end }}"
       - "{{ if not .IsSnapshot }}v{{ .Major }}{{ end }}"
@@ -145,11 +146,6 @@ dockers_v2:
       - linux/amd64
       - linux/arm64
     sbom: "{{ not .Env.DISABLE_SBOM }}"
-    build_args:
-      VERSION: "{{.Version}}"
-      COMMIT: "{{.FullCommit}}"
-      DATE: "{{.Date}}"
-      BUILT_BY: goreleaser
 
 docker_signs:
   - id: default
@@ -179,7 +175,7 @@ mcp:
     - registry_type: oci
       identifier: "ghcr.io/meysam81/parse-dmarc:{{ .Version }}"
       transport:
-        type: local
+        type: stdio
   disable: false
 
 report_sizes: true
