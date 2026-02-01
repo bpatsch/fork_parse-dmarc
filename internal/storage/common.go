@@ -34,6 +34,7 @@ type Statistics struct {
 	ComplianceRate    float64 `json:"compliance_rate"`
 	UniqueSourceIPs   int     `json:"unique_source_ips"`
 	UniqueDomains     int     `json:"unique_domains"`
+	HasData           bool    `json:"has_data"`
 }
 
 type TopSourceIP struct {
@@ -193,6 +194,8 @@ func (s *Storage) GetStatistics() (*Statistics, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	stats.HasData = stats.TotalReports > 0
 
 	if stats.TotalMessages > 0 {
 		stats.ComplianceRate = float64(stats.CompliantMessages) / float64(stats.TotalMessages) * 100

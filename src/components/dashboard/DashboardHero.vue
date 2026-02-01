@@ -5,14 +5,16 @@ const props = defineProps({
   complianceScore: { type: Number, required: true },
   volume: { type: Number, default: 0 },
   sourceCount: { type: Number, default: 0 },
+  hasData: { type: Boolean, default: false },
   dateRange: { type: String, default: "Last 30 Days" },
   loading: { type: Boolean, default: false },
 });
 
 const emit = defineEmits(["refresh"]);
 
-// Determine health state based on score
+// Determine health state based on score and data availability
 const healthState = computed(() => {
+  if (!props.hasData) return "nodata";
   if (props.complianceScore >= 95) return "secure";
   if (props.complianceScore >= 80) return "warning";
   return "critical";
@@ -23,12 +25,15 @@ const fmt = (n) => new Intl.NumberFormat("en-US").format(n);
 
 // Dynamic status text
 const statusMessage = computed(() => {
+  if (healthState.value === "nodata") return "Awaiting Data";
   if (healthState.value === "secure") return "Domain Protected";
   if (healthState.value === "warning") return "Compliance Issues Detected";
   return "Critical Authentication Gaps";
 });
 
 const statusSubtext = computed(() => {
+  if (healthState.value === "nodata")
+    return "No DMARC reports received yet. Check IMAP connection.";
   if (healthState.value === "secure") return "Traffic is fully authenticated.";
   if (healthState.value === "warning")
     return "Some legitimate email may be failing.";
@@ -85,6 +90,21 @@ const statusSubtext = computed(() => {
               <path d="m9 12 2 2 4-4" />
             </svg>
             <svg
+              v-else-if="healthState === 'nodata'"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="16" x2="12" y2="12" />
+              <line x1="12" y1="8" x2="12.01" y2="8" />
+            </svg>
+            <svg
               v-else
               width="24"
               height="24"
@@ -107,7 +127,7 @@ const statusSubtext = computed(() => {
           </div>
         </div>
 
-        <div class="health-score">
+        <div class="health-score" v-if="hasData">
           <span class="score-val">{{ complianceScore.toFixed(1) }}%</span>
           <span class="score-label">Pass Rate</span>
         </div>
@@ -293,6 +313,18 @@ const statusSubtext = computed(() => {
 }
 
 /* --- Status Variants --- */
+
+/* No Data (Blue/Info) */
+.health-card.nodata {
+  border-left: 4px solid var(--c-primary);
+}
+.health-card.nodata .icon-wrapper {
+  background-color: rgba(99, 102, 241, 0.1);
+  color: var(--c-primary);
+}
+.health-card.nodata .score-val {
+  color: var(--text-muted);
+}
 
 /* Secure (Green) */
 .health-card.secure {
