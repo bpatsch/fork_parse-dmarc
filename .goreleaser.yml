@@ -173,7 +173,7 @@ mcp:
     id: "1089959979"
   packages:
     - registry_type: oci
-      identifier: "ghcr.io/meysam81/parse-dmarc:{{ .Version }}"
+      identifier: "ghcr.io/meysam81/parse-dmarc:v{{ .Version }}"
       transport:
         type: stdio
   disable: false
