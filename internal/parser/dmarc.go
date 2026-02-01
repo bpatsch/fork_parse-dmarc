@@ -193,3 +193,41 @@ func (f *Feedback) GetDMARCCompliantCount() int {
 	}
 	return count
 }
+
+// NormalizeForJSON ensures all slice fields are initialized (not nil) to produce
+// valid JSON that matches the MCP output schema. The MCP SDK infers JSON schemas
+// from Go types, and nil slices serialize as null which violates the array type
+// requirement in the schema.
+func (f *Feedback) NormalizeForJSON() {
+	if f == nil {
+		return
+	}
+
+	// Normalize ReportMetadata.Errors
+	if f.ReportMetadata.Errors == nil {
+		f.ReportMetadata.Errors = []string{}
+	}
+
+	// Normalize Records slice
+	if f.Records == nil {
+		f.Records = []Record{}
+	}
+
+	// Normalize each record's nested slices
+	for i := range f.Records {
+		// Normalize PolicyEvaluated.Reason
+		if f.Records[i].Row.PolicyEvaluated.Reason == nil {
+			f.Records[i].Row.PolicyEvaluated.Reason = []Reason{}
+		}
+
+		// Normalize AuthResults.DKIM
+		if f.Records[i].AuthResults.DKIM == nil {
+			f.Records[i].AuthResults.DKIM = []DKIMResult{}
+		}
+
+		// Normalize AuthResults.SPF
+		if f.Records[i].AuthResults.SPF == nil {
+			f.Records[i].AuthResults.SPF = []SPFResult{}
+		}
+	}
+}

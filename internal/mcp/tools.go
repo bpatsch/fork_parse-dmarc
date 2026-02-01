@@ -138,6 +138,10 @@ func (s *Server) getReportByID(ctx context.Context, req *mcp.CallToolRequest, in
 		return nil, ReportOutput{}, fmt.Errorf("failed to get report: %w", err)
 	}
 
+	// Normalize slice fields to ensure valid JSON schema compliance
+	// (nil slices serialize as null, but schema expects arrays)
+	report.NormalizeForJSON()
+
 	return nil, ReportOutput{Report: report}, nil
 }
 
@@ -249,6 +253,10 @@ func (s *Server) parseDMARCReport(ctx context.Context, req *mcp.CallToolRequest,
 	if err != nil {
 		return nil, ParsedReportOutput{}, fmt.Errorf("failed to parse DMARC report: %w", err)
 	}
+
+	// Normalize slice fields to ensure valid JSON schema compliance
+	// (nil slices serialize as null, but schema expects arrays)
+	report.NormalizeForJSON()
 
 	// Calculate statistics
 	totalMessages := report.GetTotalMessages()

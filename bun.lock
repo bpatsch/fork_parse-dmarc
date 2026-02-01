@@ -12,6 +12,7 @@
       },
       "devDependencies": {
         "@vitejs/plugin-vue": "^6.0.1",
+        "convert-svgs": "^1.0.5",
         "lightningcss": "^1.30.2",
         "loglevel": "^1.9.2",
         "sharp": "^0.33.5",
@@ -249,6 +250,8 @@
     "connect-history-api-fallback": ["connect-history-api-fallback@1.6.0", "", {}, "sha512-e54B99q/OUoH64zYYRf3HBP5z24G38h5D3qXu23JGRoigpX5Ss4r9ZnDk3g0Z8uQC2x2lPaJ+UlWBc1ZWBWdLg=="],
 
     "consola": ["consola@2.15.3", "", {}, "sha512-9vAdYbHj6x2fLKC4+oPH0kFzY/orMZyG2Aj+kNylHxKGJ/Ed4dpNyAQYwJOdqO4zdM7XpVHmyejQDcQHrnuXbw=="],
+
+    "convert-svgs": ["convert-svgs@1.0.5", "", { "dependencies": { "sharp": "^0.33.0" }, "bin": { "convert-svgs": "dist/bin/cli.js" } }, "sha512-cTVgARn7K6cTztVIBZJ4o9EQxi+LaIyDPGicejDBkqGybZpjA7aXDM6rSXotcGcK13JgFsztEVncX3ulgmDnLA=="],
 
     "copy-anything": ["copy-anything@4.0.5", "", { "dependencies": { "is-what": "^5.2.0" } }, "sha512-7Vv6asjS4gMOuILabD3l739tsaxFQmC+a7pLZm02zyvs8p977bL3zEgq3yDk5rn9B0PbYgIv++jmHcuUab4RhA=="],
 
