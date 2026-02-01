@@ -12,7 +12,7 @@ func TestGetStatistics_HasData(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create storage: %v", err)
 	}
-	defer storage.Close()
+	defer func() { _ = storage.Close() }()
 
 	t.Run("empty database", func(t *testing.T) {
 		stats, err := storage.GetStatistics()
