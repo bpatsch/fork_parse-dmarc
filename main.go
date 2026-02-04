@@ -34,6 +34,9 @@ var (
 )
 
 func main() {
+	cli.VersionPrinter = func(c *cli.Command) {
+		fmt.Println(version)
+	}
 	cmd := &cli.Command{
 		Name:                  "parse-dmarc",
 		Usage:                 "Parse and analyze DMARC reports from IMAP mailbox",
