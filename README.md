@@ -88,7 +88,7 @@ brew install parse-dmarc
 ### Docker
 
 ```bash
-docker pull meysam81/parse-dmarc:v1
+docker pull meysam81/parse-dmarc
 ```
 
 ### Binary Downloads
@@ -126,43 +126,21 @@ Reports typically start arriving within 24-48 hours.
 
 ### Step 2: Run Parse DMARC with Docker
 
-**Create a configuration file:**
-
-```bash
-mkdir -p data
-cat > config.json <<EOF
-{
-  "imap": {
-    "host": "imap.gmail.com",
-    "port": 993,
-    "username": "dmarc@yourdomain.com",
-    "password": "your-app-password",
-    "mailbox": "INBOX",
-    "use_tls": true
-  },
-  "database": {
-    "path": "/data/db.sqlite"
-  },
-  "server": {
-    "port": 8080,
-    "host": "0.0.0.0"
-  }
-}
-EOF
-```
-
-**For Gmail users:** You'll need an [App Password](https://support.google.com/accounts/answer/185833), not your regular Gmail password.
-
 **Run the container:**
 
 ```bash
 docker run -d \
   --name parse-dmarc \
   -p 8080:8080 \
-  -v $(pwd)/config.json:/app/config.json \
-  -v parse-dmarc-data:/data \
-  meysam81/parse-dmarc:v1
+  -e IMAP_SERVER=imap.gmail.com \
+  -e IMAP_PORT=993 \
+  -e IMAP_USERNAME=your-email@gmail.com \
+  -e IMAP_PASSWORD=your-app-password \
+  -v parse-dmarc:/data \
+  meysam81/parse-dmarc
 ```
+
+**For Gmail users:** You'll need an [App Password](https://support.google.com/accounts/answer/185833), not your regular Gmail password.
 
 **Access the dashboard:** Open `http://localhost:8080` in your browser.
 
@@ -369,7 +347,7 @@ To disable the metrics endpoint:
 export PARSE_DMARC_METRICS=false
 
 # Docker
-docker run -e PARSE_DMARC_METRICS=false meysam81/parse-dmarc:v1
+docker run -e PARSE_DMARC_METRICS=false meysam81/parse-dmarc
 ```
 
 ### Prometheus Configuration
@@ -558,7 +536,7 @@ version: "3.8"
 
 services:
   parse-dmarc:
-    image: meysam81/parse-dmarc:v1
+    image: meysam81/parse-dmarc
     ports:
       - "8080:8080"
     volumes:
@@ -566,7 +544,7 @@ services:
       - ./data:/data
 
   prometheus:
-    image: prom/prometheus:latest
+    image: prom/prometheus
     ports:
       - "9090:9090"
     volumes:
@@ -575,7 +553,7 @@ services:
       - "--config.file=/etc/prometheus/prometheus.yml"
 
   grafana:
-    image: grafana/grafana:latest
+    image: grafana/grafana
     ports:
       - "3000:3000"
     environment:
