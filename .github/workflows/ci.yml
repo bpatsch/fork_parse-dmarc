@@ -64,7 +64,7 @@ jobs:
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v9
 
-  build-dev:
+  simulate-prod:
     if: github.event_name == 'push' || github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     permissions:
@@ -94,6 +94,35 @@ jobs:
           args: release --clean --snapshot
         env:
           GITHUB_TOKEN: ${{ github.token }}
+
+  build-docker:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+      id-token: write
+    steps:
+      - name: Build docker
+        uses: meysam81/build-docker@main
+        with:
+          build-args: |
+            VERSION=head-${{ github.sha }}
+            COMMIT=${{ github.sha }}
+            DATE=${{ github.event.head_commit.timestamp }}
+            BUILT_BY=github-actions
+          cosign: true
+          dockerhub-username: ${{ vars.DOCKERHUB_USERNAME }}
+          dockerhub-password: ${{ secrets.DOCKERHUB_TOKEN }}
+          image-name: ghcr.io/${{ github.repository }}
+          image-extra-tags: |
+            ${{ github.repository }}:latest
+            ${{ github.repository }}:${{ github.run_id }}
+            ${{ github.repository }}:${{ github.sha }}
+            ghcr.io/${{ github.repository }}:latest
+            ghcr.io/${{ github.repository }}:${{ github.run_id }}
+            ghcr.io/${{ github.repository }}:${{ github.sha }}
+          kubescape: true
 
   release-please:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
