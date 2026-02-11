@@ -28,9 +28,7 @@ var (
 	date    = "unknown"
 	builtBy = "unknown"
 
-	log         *zerolog.Logger
-	logLevel    = "info"
-	coloredLogs = false
+	log *zerolog.Logger
 )
 
 func main() {
@@ -44,7 +42,7 @@ func main() {
 		EnableShellCompletion: true,
 		Suggest:               true,
 		Before: func(ctx context.Context, c *cli.Command) (context.Context, error) {
-			log = logger.NewLogger(logLevel, !coloredLogs)
+			log = logger.NewLogger("info", false)
 			return ctx, nil
 		},
 		Flags: []cli.Flag{
@@ -187,7 +185,7 @@ func run(ctx context.Context, cmd *cli.Command) error {
 		if err := config.GenerateSample(configPath); err != nil {
 			return fmt.Errorf("failed to generate config: %w", err)
 		}
-		log.Printf("Sample configuration written to %s", configPath)
+		log.Info().Str("path", configPath).Msg("sample configuration written")
 		return nil
 	}
 
@@ -195,6 +193,9 @@ func run(ctx context.Context, cmd *cli.Command) error {
 	if err != nil {
 		return fmt.Errorf("failed to load config: %w", err)
 	}
+
+	// Reinitialize logger with config-derived level
+	log = logger.NewLogger(cfg.LogLevel, !cfg.ColoredLogs)
 
 	// Validate required IMAP configuration when fetching is enabled
 	// (not serve-only and not MCP mode)
@@ -254,13 +255,13 @@ func run(ctx context.Context, cmd *cli.Command) error {
 	var m *metrics.Metrics
 	if metricsEnabled {
 		m = metrics.New(version, commit, date)
-		log.Println("Prometheus metrics enabled at /metrics")
+		log.Info().Msg("prometheus metrics enabled at /metrics")
 	}
 
 	ctx, stop := signal.NotifyContext(ctx, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	server := api.NewServer(store, cfg.Server.Host, cfg.Server.Port, m)
+	server := api.NewServer(store, cfg.Server.Host, cfg.Server.Port, m, log)
 	serverErrChan := make(chan error, 1)
 	go func() {
 		serverErrChan <- server.Start(ctx)
@@ -270,10 +271,10 @@ func run(ctx context.Context, cmd *cli.Command) error {
 	server.RefreshMetrics()
 
 	if serveOnly {
-		log.Println("Running in serve-only mode")
+		log.Info().Msg("running in serve-only mode")
 		select {
 		case <-ctx.Done():
-			log.Println("Shutting down...")
+			log.Info().Msg("shutting down")
 		case err := <-serverErrChan:
 			if err != nil {
 				return fmt.Errorf("server error: %w", err)
@@ -287,14 +288,14 @@ func run(ctx context.Context, cmd *cli.Command) error {
 			return fmt.Errorf("failed to fetch reports: %w", err)
 		}
 		server.RefreshMetrics()
-		log.Println("Fetch complete")
+		log.Info().Msg("fetch complete")
 		return nil
 	}
 
-	log.Printf("Starting continuous fetch mode (interval: %d seconds)", fetchInterval)
+	log.Info().Int("interval_seconds", fetchInterval).Msg("starting continuous fetch mode")
 
 	if err := fetchReports(cfg, store, m); err != nil {
-		log.Printf("Initial fetch failed: %v", err)
+		log.Error().Err(err).Msg("initial fetch failed")
 	}
 	server.RefreshMetrics()
 
@@ -305,11 +306,11 @@ func run(ctx context.Context, cmd *cli.Command) error {
 		select {
 		case <-ticker.C:
 			if err := fetchReports(cfg, store, m); err != nil {
-				log.Printf("Fetch failed: %v", err)
+				log.Error().Err(err).Msg("fetch failed")
 			}
 			server.RefreshMetrics()
 		case <-ctx.Done():
-			log.Println("Shutting down...")
+			log.Info().Msg("shutting down")
 			return nil
 		case err := <-serverErrChan:
 			if err != nil {
@@ -320,7 +321,7 @@ func run(ctx context.Context, cmd *cli.Command) error {
 }
 
 func fetchReports(cfg *config.Config, store *storage.Storage, m *metrics.Metrics) error {
-	log.Println("Fetching DMARC reports...")
+	log.Info().Msg("fetching DMARC reports")
 
 	fetchStart := time.Now()
 	if m != nil {
@@ -329,7 +330,7 @@ func fetchReports(cfg *config.Config, store *storage.Storage, m *metrics.Metrics
 
 	// Create IMAP client
 	connectStart := time.Now()
-	client := imap.NewClient(&cfg.IMAP)
+	client := imap.NewClient(&cfg.IMAP, log)
 	if err := client.Connect(); err != nil {
 		if m != nil {
 			m.RecordIMAPConnection(false, time.Since(connectStart))
@@ -356,7 +357,7 @@ func fetchReports(cfg *config.Config, store *storage.Storage, m *metrics.Metrics
 	}
 
 	if len(reports) == 0 {
-		log.Println("No new reports found")
+		log.Info().Msg("no new reports found")
 		if m != nil {
 			m.RecordFetchDuration(time.Since(fetchStart))
 			m.LastFetchTimestamp.SetToCurrentTime()
@@ -364,7 +365,7 @@ func fetchReports(cfg *config.Config, store *storage.Storage, m *metrics.Metrics
 		return nil
 	}
 
-	log.Printf("Processing %d reports...", len(reports))
+	log.Info().Int("count", len(reports)).Msg("processing reports")
 
 	// Process each report
 	processed := 0
@@ -376,7 +377,7 @@ func fetchReports(cfg *config.Config, store *storage.Storage, m *metrics.Metrics
 
 			feedback, err := parser.ParseReport(attachment.Data)
 			if err != nil {
-				log.Printf("Failed to parse %s: %v", attachment.Filename, err)
+				log.Warn().Err(err).Str("filename", attachment.Filename).Msg("failed to parse report")
 				if m != nil {
 					m.ReportParseErrors.Inc()
 				}
@@ -387,7 +388,7 @@ func fetchReports(cfg *config.Config, store *storage.Storage, m *metrics.Metrics
 			}
 
 			if err := store.SaveReport(feedback); err != nil {
-				log.Printf("Failed to save report %s: %v", feedback.ReportMetadata.ReportID, err)
+				log.Error().Err(err).Str("report_id", feedback.ReportMetadata.ReportID).Msg("failed to save report")
 				if m != nil {
 					m.ReportStoreErrors.Inc()
 				}
@@ -397,11 +398,12 @@ func fetchReports(cfg *config.Config, store *storage.Storage, m *metrics.Metrics
 				m.ReportsStored.Inc()
 			}
 
-			log.Printf("Saved report: %s from %s (domain: %s, messages: %d)",
-				feedback.ReportMetadata.ReportID,
-				feedback.ReportMetadata.OrgName,
-				feedback.PolicyPublished.Domain,
-				feedback.GetTotalMessages())
+			log.Info().
+				Str("report_id", feedback.ReportMetadata.ReportID).
+				Str("org", feedback.ReportMetadata.OrgName).
+				Str("domain", feedback.PolicyPublished.Domain).
+				Int("messages", feedback.GetTotalMessages()).
+				Msg("saved report")
 			processed++
 		}
 	}
@@ -411,7 +413,7 @@ func fetchReports(cfg *config.Config, store *storage.Storage, m *metrics.Metrics
 		m.LastFetchTimestamp.SetToCurrentTime()
 	}
 
-	log.Printf("Successfully processed %d reports", processed)
+	log.Info().Int("count", processed).Msg("reports processed")
 	return nil
 }
 

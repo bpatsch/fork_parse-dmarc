@@ -5,12 +5,12 @@ import (
 	"embed"
 	"fmt"
 	"io/fs"
-	"log"
 	"net/http"
 	"strconv"
 	"time"
 
 	"github.com/goccy/go-json"
+	"github.com/rs/zerolog"
 
 	"github.com/meysam81/parse-dmarc/internal/metrics"
 	"github.com/meysam81/parse-dmarc/internal/storage"
@@ -23,14 +23,16 @@ var distFS embed.FS
 type Server struct {
 	storage *storage.Storage
 	metrics *metrics.Metrics
+	log     *zerolog.Logger
 	addr    string
 }
 
 // NewServer creates a new API server
-func NewServer(store *storage.Storage, host string, port int, m *metrics.Metrics) *Server {
+func NewServer(store *storage.Storage, host string, port int, m *metrics.Metrics, log *zerolog.Logger) *Server {
 	return &Server{
 		storage: store,
 		metrics: m,
+		log:     log,
 		addr:    fmt.Sprintf("%s:%d", host, port),
 	}
 }
@@ -96,15 +98,15 @@ func (s *Server) Start(ctx context.Context) error {
 
 	go func() {
 		<-ctx.Done()
-		log.Println("Shutting down server...")
+		s.log.Info().Msg("shutting down server")
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 		if err := server.Shutdown(shutdownCtx); err != nil {
-			log.Printf("Server shutdown error: %v", err)
+			s.log.Error().Err(err).Msg("server shutdown error")
 		}
 	}()
 
-	log.Printf("Starting server on %s", s.addr)
+	s.log.Info().Str("addr", s.addr).Msg("starting server")
 	err = server.ListenAndServe()
 	if err != nil && err != http.ErrServerClosed {
 		return fmt.Errorf("HTTP server listen on %s: %w", s.addr, err)
@@ -227,7 +229,7 @@ func (s *Server) handleTopSources(w http.ResponseWriter, r *http.Request) {
 func (s *Server) writeJSON(w http.ResponseWriter, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(data); err != nil {
-		log.Printf("Failed to encode JSON: %v", err)
+		s.log.Error().Err(err).Msg("failed to encode JSON")
 	}
 }
 
@@ -240,7 +242,7 @@ func (s *Server) RefreshMetrics() {
 	// Update basic statistics
 	stats, err := s.storage.GetStatistics()
 	if err != nil {
-		log.Printf("Failed to get statistics for metrics: %v", err)
+		s.log.Error().Err(err).Msg("failed to get statistics for metrics")
 	} else {
 		s.metrics.UpdateStatistics(
 			stats.TotalReports,
@@ -255,7 +257,7 @@ func (s *Server) RefreshMetrics() {
 	// Update per-domain metrics
 	domainStats, err := s.storage.GetDomainStats()
 	if err != nil {
-		log.Printf("Failed to get domain stats for metrics: %v", err)
+		s.log.Error().Err(err).Msg("failed to get domain stats for metrics")
 	} else {
 		for _, ds := range domainStats {
 			s.metrics.UpdateDomainMetrics(ds.Domain, ds.TotalMessages, ds.ComplianceRate)
@@ -265,7 +267,7 @@ func (s *Server) RefreshMetrics() {
 	// Update per-organization metrics
 	orgStats, err := s.storage.GetOrgStats()
 	if err != nil {
-		log.Printf("Failed to get org stats for metrics: %v", err)
+		s.log.Error().Err(err).Msg("failed to get org stats for metrics")
 	} else {
 		for _, os := range orgStats {
 			s.metrics.UpdateOrgMetrics(os.OrgName, os.Reports)
@@ -275,7 +277,7 @@ func (s *Server) RefreshMetrics() {
 	// Update disposition metrics
 	dispStats, err := s.storage.GetDispositionStats()
 	if err != nil {
-		log.Printf("Failed to get disposition stats for metrics: %v", err)
+		s.log.Error().Err(err).Msg("failed to get disposition stats for metrics")
 	} else {
 		for _, ds := range dispStats {
 			s.metrics.UpdateDispositionMetrics(ds.Disposition, ds.Count)
@@ -286,10 +288,10 @@ func (s *Server) RefreshMetrics() {
 	spfStats, errSpf := s.storage.GetSPFStats()
 	dkimStats, errDkim := s.storage.GetDKIMStats()
 	if errSpf != nil {
-		log.Printf("Failed to get SPF stats for metrics: %v", errSpf)
+		s.log.Error().Err(errSpf).Msg("failed to get SPF stats for metrics")
 	}
 	if errDkim != nil {
-		log.Printf("Failed to get DKIM stats for metrics: %v", errDkim)
+		s.log.Error().Err(errDkim).Msg("failed to get DKIM stats for metrics")
 	}
 	if errSpf == nil && errDkim == nil {
 		spfResults := make(map[string]int)

@@ -21,9 +21,11 @@ var (
 
 // Config holds the application configuration
 type Config struct {
-	IMAP     IMAPConfig     `json:"imap"`
-	Database DatabaseConfig `json:"database"`
-	Server   ServerConfig   `json:"server"`
+	LogLevel    string         `json:"log_level" env:"LOG_LEVEL" envDefault:"info"`
+	ColoredLogs bool           `json:"colored_logs" env:"COLORED_LOGS" envDefault:"false"`
+	IMAP        IMAPConfig     `json:"imap"`
+	Database    DatabaseConfig `json:"database"`
+	Server      ServerConfig   `json:"server"`
 }
 
 // IMAPConfig holds IMAP server configuration
@@ -140,6 +142,7 @@ func GenerateSample(path string) error {
 		return fmt.Errorf("resolve default database path: %w", err)
 	}
 	sample := Config{
+		LogLevel: "info",
 		IMAP: IMAPConfig{
 			Host:     "imap.example.com",
 			Port:     993,

@@ -4,7 +4,6 @@ import (
 	"crypto/tls"
 	"fmt"
 	"io"
-	"log"
 	"strings"
 
 	"github.com/emersion/go-imap"
@@ -12,17 +11,19 @@ import (
 	_ "github.com/emersion/go-message/charset"
 	"github.com/emersion/go-message/mail"
 	"github.com/meysam81/parse-dmarc/internal/config"
+	"github.com/rs/zerolog"
 )
 
 // Client represents an IMAP client
 type Client struct {
 	config *config.IMAPConfig
 	client *client.Client
+	log    *zerolog.Logger
 }
 
 // NewClient creates a new IMAP client
-func NewClient(cfg *config.IMAPConfig) *Client {
-	return &Client{config: cfg}
+func NewClient(cfg *config.IMAPConfig, log *zerolog.Logger) *Client {
+	return &Client{config: cfg, log: log}
 }
 
 // Connect establishes connection to IMAP server
@@ -31,7 +32,7 @@ func (c *Client) Connect() error {
 	var err error
 
 	addr := fmt.Sprintf("%s:%d", c.config.Host, c.config.Port)
-	log.Printf("Connecting to %s...", addr)
+	c.log.Debug().Str("addr", addr).Msg("connecting")
 
 	if c.config.UseTLS {
 		imapClient, err = client.DialTLS(addr, &tls.Config{
@@ -46,7 +47,7 @@ func (c *Client) Connect() error {
 	}
 
 	c.client = imapClient
-	log.Printf("Connected to %s", addr)
+	c.log.Info().Str("addr", addr).Msg("connected")
 
 	// Login
 	if err := c.client.Login(c.config.Username, c.config.Password); err != nil {
@@ -54,7 +55,7 @@ func (c *Client) Connect() error {
 		return fmt.Errorf("login failed: %w", err)
 	}
 
-	log.Printf("Logged in as %s", c.config.Username)
+	c.log.Info().Str("username", c.config.Username).Msg("logged in")
 	return nil
 }
 
@@ -89,7 +90,7 @@ func (c *Client) FetchDMARCReports() ([]Report, error) {
 	}
 
 	if mbox.Messages == 0 {
-		log.Println("No messages in mailbox")
+		c.log.Info().Msg("no messages in mailbox")
 		return []Report{}, nil
 	}
 
@@ -103,11 +104,11 @@ func (c *Client) FetchDMARCReports() ([]Report, error) {
 	}
 
 	if len(ids) == 0 {
-		log.Println("No new messages found")
+		c.log.Info().Msg("no new messages found")
 		return []Report{}, nil
 	}
 
-	log.Printf("Found %d new messages", len(ids))
+	c.log.Info().Int("count", len(ids)).Msg("found new messages")
 
 	seqSet := new(imap.SeqSet)
 	seqSet.AddNum(ids...)
@@ -127,13 +128,13 @@ func (c *Client) FetchDMARCReports() ([]Report, error) {
 	for msg := range messages {
 		r := msg.GetBody(section)
 		if r == nil {
-			log.Printf("Server didn't return message body for UID %d", msg.Uid)
+			c.log.Warn().Uint32("uid", msg.Uid).Msg("server didn't return message body")
 			continue
 		}
 
 		mr, err := mail.CreateReader(r)
 		if err != nil {
-			log.Printf("Failed to create mail reader: %v", err)
+			c.log.Warn().Err(err).Msg("failed to create mail reader")
 			continue
 		}
 
@@ -153,7 +154,7 @@ func (c *Client) FetchDMARCReports() ([]Report, error) {
 				break
 			}
 			if err != nil {
-				log.Printf("Error reading part: %v", err)
+				c.log.Warn().Err(err).Msg("error reading part")
 				break
 			}
 
@@ -164,7 +165,7 @@ func (c *Client) FetchDMARCReports() ([]Report, error) {
 				if isDMARCAttachment(filename) {
 					data, err := io.ReadAll(part.Body)
 					if err != nil {
-						log.Printf("Error reading attachment: %v", err)
+						c.log.Warn().Err(err).Msg("error reading attachment")
 						continue
 					}
 
