@@ -52,7 +52,7 @@ func (s *Storage) SaveReport(feedback *parser.Feedback) error {
 
 	tx, err := s.db.Begin()
 	if err != nil {
-		return err
+		return fmt.Errorf("begin transaction: %w", err)
 	}
 	defer func() { _ = tx.Rollback() }()
 
@@ -86,7 +86,7 @@ func (s *Storage) SaveReport(feedback *parser.Feedback) error {
 
 	reportID, err := result.LastInsertId()
 	if err != nil {
-		return err
+		return fmt.Errorf("get last insert ID: %w", err)
 	}
 
 	rowsAffected, _ := result.RowsAffected()
@@ -123,7 +123,11 @@ func (s *Storage) SaveReport(feedback *parser.Feedback) error {
 		}
 	}
 
-	return tx.Commit()
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("commit transaction: %w", err)
+	}
+
+	return nil
 }
 
 func (s *Storage) GetReports(limit, offset int) ([]ReportSummary, error) {
@@ -138,7 +142,7 @@ func (s *Storage) GetReports(limit, offset int) ([]ReportSummary, error) {
 	`, limit, offset)
 
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("query reports: %w", err)
 	}
 	defer func() { _ = rows.Close() }()
 
@@ -152,7 +156,7 @@ func (s *Storage) GetReports(limit, offset int) ([]ReportSummary, error) {
 			&r.PolicyP,
 		)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("scan report row: %w", err)
 		}
 
 		if r.TotalMessages > 0 {
@@ -169,12 +173,12 @@ func (s *Storage) GetReportByID(id int64) (*parser.Feedback, error) {
 	var rawReport string
 	err := s.db.QueryRow("SELECT raw_report FROM reports WHERE id = ?", id).Scan(&rawReport)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("query report %d: %w", id, err)
 	}
 
 	var feedback parser.Feedback
 	if err := json.Unmarshal([]byte(rawReport), &feedback); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("unmarshal report %d: %w", id, err)
 	}
 
 	return &feedback, nil
@@ -192,7 +196,7 @@ func (s *Storage) GetStatistics() (*Statistics, error) {
 	`).Scan(&stats.TotalReports, &stats.TotalMessages, &stats.CompliantMessages)
 
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("query report statistics: %w", err)
 	}
 
 	stats.HasData = stats.TotalReports > 0
@@ -203,12 +207,12 @@ func (s *Storage) GetStatistics() (*Statistics, error) {
 
 	err = s.db.QueryRow("SELECT COUNT(DISTINCT source_ip) FROM records").Scan(&stats.UniqueSourceIPs)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("query unique source IPs: %w", err)
 	}
 
 	err = s.db.QueryRow("SELECT COUNT(DISTINCT domain) FROM reports").Scan(&stats.UniqueDomains)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("query unique domains: %w", err)
 	}
 
 	return &stats, nil
@@ -228,7 +232,7 @@ func (s *Storage) GetTopSourceIPs(limit int) ([]TopSourceIP, error) {
 	`, limit)
 
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("query top source IPs: %w", err)
 	}
 	defer func() { _ = rows.Close() }()
 
@@ -236,7 +240,7 @@ func (s *Storage) GetTopSourceIPs(limit int) ([]TopSourceIP, error) {
 	for rows.Next() {
 		var r TopSourceIP
 		if err := rows.Scan(&r.SourceIP, &r.Count, &r.Pass, &r.Fail); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("scan source IP row: %w", err)
 		}
 		results = append(results, r)
 	}
@@ -284,7 +288,7 @@ func (s *Storage) GetDomainStats() ([]DomainStats, error) {
 		GROUP BY domain
 	`)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("query domain stats: %w", err)
 	}
 	defer func() { _ = rows.Close() }()
 
@@ -292,7 +296,7 @@ func (s *Storage) GetDomainStats() ([]DomainStats, error) {
 	for rows.Next() {
 		var ds DomainStats
 		if err := rows.Scan(&ds.Domain, &ds.TotalMessages, &ds.CompliantMessages); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("scan domain stats row: %w", err)
 		}
 		if ds.TotalMessages > 0 {
 			ds.ComplianceRate = float64(ds.CompliantMessages) / float64(ds.TotalMessages) * 100
@@ -310,7 +314,7 @@ func (s *Storage) GetOrgStats() ([]OrgStats, error) {
 		GROUP BY org_name
 	`)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("query org stats: %w", err)
 	}
 	defer func() { _ = rows.Close() }()
 
@@ -318,7 +322,7 @@ func (s *Storage) GetOrgStats() ([]OrgStats, error) {
 	for rows.Next() {
 		var os OrgStats
 		if err := rows.Scan(&os.OrgName, &os.Reports); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("scan org stats row: %w", err)
 		}
 		stats = append(stats, os)
 	}
@@ -334,7 +338,7 @@ func (s *Storage) GetDispositionStats() ([]DispositionStats, error) {
 		GROUP BY disposition
 	`)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("query disposition stats: %w", err)
 	}
 	defer func() { _ = rows.Close() }()
 
@@ -342,7 +346,7 @@ func (s *Storage) GetDispositionStats() ([]DispositionStats, error) {
 	for rows.Next() {
 		var ds DispositionStats
 		if err := rows.Scan(&ds.Disposition, &ds.Count); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("scan disposition stats row: %w", err)
 		}
 		stats = append(stats, ds)
 	}
@@ -358,7 +362,7 @@ func (s *Storage) GetSPFStats() ([]AuthResultStats, error) {
 		GROUP BY spf_result
 	`)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("query SPF stats: %w", err)
 	}
 	defer func() { _ = rows.Close() }()
 
@@ -366,7 +370,7 @@ func (s *Storage) GetSPFStats() ([]AuthResultStats, error) {
 	for rows.Next() {
 		var as AuthResultStats
 		if err := rows.Scan(&as.Result, &as.Count); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("scan SPF stats row: %w", err)
 		}
 		stats = append(stats, as)
 	}
@@ -382,7 +386,7 @@ func (s *Storage) GetDKIMStats() ([]AuthResultStats, error) {
 		GROUP BY dkim_result
 	`)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("query DKIM stats: %w", err)
 	}
 	defer func() { _ = rows.Close() }()
 
@@ -390,7 +394,7 @@ func (s *Storage) GetDKIMStats() ([]AuthResultStats, error) {
 	for rows.Next() {
 		var as AuthResultStats
 		if err := rows.Scan(&as.Result, &as.Count); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("scan DKIM stats row: %w", err)
 		}
 		stats = append(stats, as)
 	}

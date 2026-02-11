@@ -18,7 +18,7 @@ func NewStorage(dbPath string) (*Storage, error) {
 
 	storage := &Storage{db: db}
 	if err := storage.init(); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("initialize database schema: %w", err)
 	}
 
 	return storage, nil
@@ -65,6 +65,9 @@ func (s *Storage) init() error {
 	CREATE INDEX IF NOT EXISTS idx_records_source_ip ON records(source_ip);
 	`
 
-	_, err := s.db.Exec(schema)
-	return err
+	if _, err := s.db.Exec(schema); err != nil {
+		return fmt.Errorf("exec schema: %w", err)
+	}
+
+	return nil
 }

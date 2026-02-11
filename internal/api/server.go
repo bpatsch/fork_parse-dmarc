@@ -107,7 +107,7 @@ func (s *Server) Start(ctx context.Context) error {
 	log.Printf("Starting server on %s", s.addr)
 	err = server.ListenAndServe()
 	if err != nil && err != http.ErrServerClosed {
-		return err
+		return fmt.Errorf("HTTP server listen on %s: %w", s.addr, err)
 	}
 	return nil
 }

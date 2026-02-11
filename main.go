@@ -335,7 +335,7 @@ func fetchReports(cfg *config.Config, store *storage.Storage, m *metrics.Metrics
 			m.RecordIMAPConnection(false, time.Since(connectStart))
 			m.FetchErrors.Inc()
 		}
-		return err
+		return fmt.Errorf("connect to IMAP server: %w", err)
 	}
 	if m != nil {
 		m.RecordIMAPConnection(true, time.Since(connectStart))
@@ -348,7 +348,7 @@ func fetchReports(cfg *config.Config, store *storage.Storage, m *metrics.Metrics
 		if m != nil {
 			m.FetchErrors.Inc()
 		}
-		return err
+		return fmt.Errorf("fetch DMARC reports: %w", err)
 	}
 
 	if m != nil {

@@ -2,6 +2,7 @@ package config
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -76,17 +77,17 @@ func Load(path string) (*Config, error) {
 	var err error
 
 	if err := env.Parse(&cfg); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("parse env config: %w", err)
 	}
 
 	if _, err := os.Stat(path); err == nil {
 		data, err := os.ReadFile(path)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("read config file %s: %w", path, err)
 		}
 
 		if err := json.Unmarshal(data, &cfg); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("parse config file %s: %w", path, err)
 		}
 	}
 
@@ -101,11 +102,11 @@ func Load(path string) (*Config, error) {
 		if err != nil || ensureDBPathExists(cfg.Database.Path) != nil {
 			cfg.Database.Path, err = fallbackDBPath()
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("resolve database path: %w", err)
 			}
 			err = ensureDBPathExists(cfg.Database.Path)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("ensure database path: %w", err)
 			}
 		}
 	}
@@ -136,7 +137,7 @@ func (c *Config) Validate() error {
 func GenerateSample(path string) error {
 	dbPath, err := defaultDBPath()
 	if err != nil {
-		return err
+		return fmt.Errorf("resolve default database path: %w", err)
 	}
 	sample := Config{
 		IMAP: IMAPConfig{
@@ -158,8 +159,12 @@ func GenerateSample(path string) error {
 
 	data, err := json.MarshalIndent(sample, "", "  ")
 	if err != nil {
-		return err
+		return fmt.Errorf("marshal sample config: %w", err)
 	}
 
-	return os.WriteFile(path, data, 0644)
+	if err := os.WriteFile(path, data, 0644); err != nil {
+		return fmt.Errorf("write config file %s: %w", path, err)
+	}
+
+	return nil
 }
