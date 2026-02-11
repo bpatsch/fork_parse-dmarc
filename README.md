@@ -75,12 +75,6 @@ Deploy Parse DMARC to your favorite cloud provider with one click:
 ### Homebrew (macOS/Linux)
 
 ```bash
-brew install meysam81/tap/parse-dmarc
-```
-
-Or tap first, then install:
-
-```bash
 brew tap meysam81/tap
 brew install parse-dmarc
 ```
