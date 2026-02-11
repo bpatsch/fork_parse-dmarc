@@ -121,11 +121,13 @@ dist: .goreleaser-dist
 #    signature: ${artifact}_{{- tolower .Os }}_{{- if eq .Arch "386" }}i386{{- else }}{{ .Arch }}{{ end }}{{- if .Arm }}v{{ .Arm }}{{ end }}.sig
 
 dockers_v2:
-  # Main image (dashboard mode by default)
-  - images:
+  - id: parse-dmarc
+    images:
       - meysam81/{{ .ProjectName }}
       - ghcr.io/meysam81/{{ .ProjectName }}
     dockerfile: Dockerfile.goreleaser
+    extra_files:
+      - ./
     tags:
       - "{{ if not .IsSnapshot }}v{{ .Version }}{{ end }}"
       - "{{ if not .IsSnapshot }}v{{ .Major }}{{ end }}"
@@ -133,8 +135,6 @@ dockers_v2:
       - "{{ if not .IsSnapshot }}v{{ .Major }}.{{ .Minor }}.{{ .Patch }}{{ end }}"
       - "{{ .FullCommit }}"
       - "{{ if .IsNightly }}latest{{ end }}"
-    extra_files:
-      - ./
     labels:
       "org.opencontainers.image.created": "{{.Date}}"
       "org.opencontainers.image.description": "🛡️ A lightweight, self-hosted DMARC report parser with a beautiful Vue.js dashboard. Single-binary deployment with IMAP integration, SQLite storage, and RFC 7489 compliance. Built with Go and Vue 3 - no external dependencies required."
@@ -143,35 +143,6 @@ dockers_v2:
       "org.opencontainers.image.source": "{{.GitURL}}"
       "org.opencontainers.image.version": "{{.Version}}"
       "io.modelcontextprotocol.server.name": "io.github.meysam81/parse-dmarc"
-    platforms:
-      - linux/amd64
-      - linux/arm64
-    sbom: "{{ not .Env.DISABLE_SBOM }}"
-  # MCP image (MCP stdio mode by default)
-  - images:
-      - meysam81/{{ .ProjectName }}-mcp
-      - ghcr.io/meysam81/{{ .ProjectName }}-mcp
-    dockerfile: Dockerfile.mcp
-    tags:
-      - "{{ if not .IsSnapshot }}v{{ .Version }}{{ end }}"
-      - "{{ if not .IsSnapshot }}v{{ .Major }}{{ end }}"
-      - "{{ if not .IsSnapshot }}v{{ .Major }}.{{ .Minor }}{{ end }}"
-      - "{{ if not .IsSnapshot }}v{{ .Major }}.{{ .Minor }}.{{ .Patch }}{{ end }}"
-      - "{{ .FullCommit }}"
-      - "{{ if .IsNightly }}latest{{ end }}"
-    extra_files:
-      - ./
-    labels:
-      "org.opencontainers.image.created": "{{.Date}}"
-      "org.opencontainers.image.description": "🛡️ Parse-DMARC MCP Server - Model Context Protocol server for DMARC report analysis. Runs in stdio mode for AI assistant integration."
-      "org.opencontainers.image.name": "{{.ProjectName}}-mcp"
-      "org.opencontainers.image.revision": "{{.FullCommit}}"
-      "org.opencontainers.image.source": "{{.GitURL}}"
-      "org.opencontainers.image.version": "{{.Version}}"
-      "io.modelcontextprotocol.server.name": "io.github.meysam81/parse-dmarc"
-    platforms:
-      - linux/amd64
-      - linux/arm64
     sbom: "{{ not .Env.DISABLE_SBOM }}"
 
 docker_signs:
