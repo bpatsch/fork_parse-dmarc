@@ -1,5 +1,6 @@
 # syntax=docker/dockerfile:1
 FROM gcr.io/distroless/static-debian12:nonroot
+ARG TARGETPLATFORM
 
 VOLUME /data
 ENV PARSE_DMARC_CONFIG=/app/config.json \

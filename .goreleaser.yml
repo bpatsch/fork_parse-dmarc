@@ -126,8 +126,6 @@ dockers_v2:
       - meysam81/{{ .ProjectName }}
       - ghcr.io/meysam81/{{ .ProjectName }}
     dockerfile: Dockerfile.goreleaser
-    extra_files:
-      - ./
     tags:
       - "{{ if not .IsSnapshot }}v{{ .Version }}{{ end }}"
       - "{{ if not .IsSnapshot }}v{{ .Major }}{{ end }}"
