@@ -239,6 +239,45 @@ just build
 ./bin/parse-dmarc -config=config.json
 ```
 
+### Building the Docker Image
+
+If you've made local changes or want to build the Docker image from source, you can use the `docker build` command.
+
+```bash
+docker build -t parse-dmarc:local .
+```
+
+This builds the image from the `Dockerfile` in the current directory and tags it as `parse-dmarc:local`.
+
+#### Running the Custom-Built Image
+
+To run your locally-built image, you can use the same `docker run` commands as in the Quick Start, but replace the image name `meysam81/parse-dmarc` with your local tag (`parse-dmarc:local`).
+
+**Example (Using Filesystem Mode):**
+
+To run the container using the new filesystem processing feature, you must map a local directory containing your DMARC reports into the container.
+
+1.  **Using an environment variable:**
+    This is the simplest method. The `-v` flag maps your local report directory (e.g., `./dmarc-reports`) to a directory inside the container (e.g., `/app/reports`). The `-e` flag tells the application to use that internal path.
+
+    ```bash
+    docker run -p 8080:8080 \
+      -v $(pwd)/dmarc-reports:/app/reports \
+      -e REPORT_PATH=/app/reports \
+      parse-dmarc:local
+    ```
+
+2.  **Using a `config.json` file:**
+    Alternatively, you can create a `config.json` file with `"report_path": "/app/reports"` and mount it into the container.
+
+    ```bash
+    docker run -p 8080:8080 \
+      -v $(pwd)/dmarc-reports:/app/reports \
+      -v $(pwd)/config.json:/app/config.json \
+      parse-dmarc:local
+    ```
+After processing, the application will move any handled reports into a `processed` subdirectory inside your local reports directory.
+
 ### Docker Compose
 
 See [`compose.yml`](./compose.yml) for Docker Compose configuration.

@@ -23,6 +23,7 @@ var (
 type Config struct {
 	LogLevel    string         `json:"log_level" env:"LOG_LEVEL" envDefault:"info"`
 	ColoredLogs bool           `json:"colored_logs" env:"COLORED_LOGS" envDefault:"false"`
+	ReportPath  string         `json:"report_path" env:"REPORT_PATH"`
 	IMAP        IMAPConfig     `json:"imap"`
 	Database    DatabaseConfig `json:"database"`
 	Server      ServerConfig   `json:"server"`
@@ -123,16 +124,31 @@ func Load(path string) (*Config, error) {
 // Required fields: IMAP host, username, and password.
 // Returns nil if valid, or an error describing the missing configuration.
 func (c *Config) Validate() error {
-	if c.IMAP.Host == "" {
-		return ErrMissingIMAPHost
+	hasIMAPConfig := c.IMAP.Host != "" || c.IMAP.Username != "" || c.IMAP.Password != ""
+	hasReportPath := c.ReportPath != ""
+
+	if hasIMAPConfig && hasReportPath {
+		return errors.New("cannot configure both IMAP settings and ReportPath; choose one mode of operation")
 	}
-	if c.IMAP.Username == "" {
-		return ErrMissingIMAPUsername
+
+	if hasReportPath {
+		return nil // Filesystem mode, skip IMAP validation
 	}
-	if c.IMAP.Password == "" {
-		return ErrMissingIMAPPassword
+
+	if hasIMAPConfig {
+		if c.IMAP.Host == "" {
+			return ErrMissingIMAPHost
+		}
+		if c.IMAP.Username == "" {
+			return ErrMissingIMAPUsername
+		}
+		if c.IMAP.Password == "" {
+			return ErrMissingIMAPPassword
+		}
+		return nil
 	}
-	return nil
+
+	return errors.New("either IMAP settings or ReportPath must be configured to fetch DMARC reports")
 }
 
 // GenerateSample creates a sample configuration file
@@ -143,6 +159,7 @@ func GenerateSample(path string) error {
 	}
 	sample := Config{
 		LogLevel: "info",
+		// ReportPath: "/path/to/dmarc/reports", // Uncomment and set to a directory path to read reports from the filesystem instead of IMAP
 		IMAP: IMAPConfig{
 			Host:     "imap.example.com",
 			Port:     993,

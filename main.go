@@ -11,6 +11,7 @@ import (
 
 	"github.com/meysam81/parse-dmarc/internal/api"
 	"github.com/meysam81/parse-dmarc/internal/config"
+	"github.com/meysam81/parse-dmarc/internal/filereader"
 	"github.com/meysam81/parse-dmarc/internal/imap"
 	"github.com/meysam81/parse-dmarc/internal/logger"
 	mcpserver "github.com/meysam81/parse-dmarc/internal/mcp"
@@ -211,6 +212,15 @@ func run(ctx context.Context, cmd *cli.Command) error {
 	}
 	defer func() { _ = store.Close() }()
 
+	// Determine report source
+	var reportSource string
+	if cfg.ReportPath != "" {
+		reportSource = "filesystem"
+	} else {
+		reportSource = "imap"
+	}
+	log.Info().Str("source", reportSource).Msg("using report source")
+
 	// Handle MCP mode
 	if mcpMode || mcpHTTPAddr != "" {
 		// Build OAuth config if enabled
@@ -283,42 +293,66 @@ func run(ctx context.Context, cmd *cli.Command) error {
 		return nil
 	}
 
-	if fetchOnce {
-		if err := fetchReports(cfg, store, m); err != nil {
-			return fmt.Errorf("failed to fetch reports: %w", err)
+	// --- Report Processing Logic ---
+	if reportSource == "filesystem" {
+		log.Info().Str("path", cfg.ReportPath).Msg("processing local reports")
+		processor := filereader.NewProcessor(cfg.ReportPath, store, m, log)
+		if err := processor.ProcessReports(saveParsedReport); err != nil {
+			log.Error().Err(err).Msg("filesystem report processing failed")
 		}
 		server.RefreshMetrics()
-		log.Info().Msg("fetch complete")
-		return nil
-	}
+		log.Info().Msg("filesystem processing complete. Server is running.")
 
-	log.Info().Int("interval_seconds", fetchInterval).Msg("starting continuous fetch mode")
-
-	if err := fetchReports(cfg, store, m); err != nil {
-		log.Error().Err(err).Msg("initial fetch failed")
-	}
-	server.RefreshMetrics()
-
-	ticker := time.NewTicker(time.Duration(fetchInterval) * time.Second)
-	defer ticker.Stop()
-
-	for {
+		// Wait for shutdown signal
 		select {
-		case <-ticker.C:
-			if err := fetchReports(cfg, store, m); err != nil {
-				log.Error().Err(err).Msg("fetch failed")
-			}
-			server.RefreshMetrics()
 		case <-ctx.Done():
 			log.Info().Msg("shutting down")
-			return nil
 		case err := <-serverErrChan:
 			if err != nil {
 				return fmt.Errorf("server error: %w", err)
 			}
 		}
+		return nil
+
+	} else { // reportSource == "imap"
+		// Existing IMAP processing logic
+		if fetchOnce {
+			if err := fetchReports(cfg, store, m); err != nil {
+				return fmt.Errorf("failed to fetch reports: %w", err)
+			}
+			server.RefreshMetrics()
+			log.Info().Msg("fetch complete")
+			return nil
+		}
+
+		log.Info().Int("interval_seconds", fetchInterval).Msg("starting continuous fetch mode")
+
+		if err := fetchReports(cfg, store, m); err != nil {
+			log.Error().Err(err).Msg("initial fetch failed")
+		}
+		server.RefreshMetrics()
+
+		ticker := time.NewTicker(time.Duration(fetchInterval) * time.Second)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-ticker.C:
+				if err := fetchReports(cfg, store, m); err != nil {
+					log.Error().Err(err).Msg("fetch failed")
+				}
+				server.RefreshMetrics()
+			case <-ctx.Done():
+				log.Info().Msg("shutting down")
+				return nil
+			case err := <-serverErrChan:
+				if err != nil {
+					return fmt.Errorf("server error: %w", err)
+				}
+			}
+		}
 	}
-}
+	return nil
 
 func fetchReports(cfg *config.Config, store *storage.Storage, m *metrics.Metrics) error {
 	log.Info().Msg("fetching DMARC reports")
@@ -383,28 +417,15 @@ func fetchReports(cfg *config.Config, store *storage.Storage, m *metrics.Metrics
 				}
 				continue
 			}
-			if m != nil {
-				m.ReportsParsed.Inc()
-			}
 
-			if err := store.SaveReport(feedback); err != nil {
-				log.Error().Err(err).Str("report_id", feedback.ReportMetadata.ReportID).Msg("failed to save report")
+			if err := saveParsedReport(feedback, m, store, log); err != nil {
+				log.Error().Err(err).Msg("failed to save report")
 				if m != nil {
 					m.ReportStoreErrors.Inc()
 				}
-				continue
+			} else {
+				processed++
 			}
-			if m != nil {
-				m.ReportsStored.Inc()
-			}
-
-			log.Info().
-				Str("report_id", feedback.ReportMetadata.ReportID).
-				Str("org", feedback.ReportMetadata.OrgName).
-				Str("domain", feedback.PolicyPublished.Domain).
-				Int("messages", feedback.GetTotalMessages()).
-				Msg("saved report")
-			processed++
 		}
 	}
 
@@ -414,6 +435,28 @@ func fetchReports(cfg *config.Config, store *storage.Storage, m *metrics.Metrics
 	}
 
 	log.Info().Int("count", processed).Msg("reports processed")
+	return nil
+}
+
+// saveParsedReport encapsulates the logic for saving a parsed DMARC feedback report to storage.
+func saveParsedReport(feedback *parser.Feedback, m *metrics.Metrics, store *storage.Storage, log *zerolog.Logger) error {
+	if m != nil {
+		m.ReportsParsed.Inc()
+	}
+
+	if err := store.SaveReport(feedback); err != nil {
+		return fmt.Errorf("save report: %w", err)
+	}
+	if m != nil {
+		m.ReportsStored.Inc()
+	}
+
+	log.Info().
+		Str("report_id", feedback.ReportMetadata.ReportID).
+		Str("org", feedback.ReportMetadata.OrgName).
+		Str("domain", feedback.PolicyPublished.Domain).
+		Int("messages", feedback.GetTotalMessages()).
+		Msg("saved report")
 	return nil
 }
 
