@@ -69,6 +69,7 @@ Deploy Parse DMARC to your favorite cloud provider with one click:
 - 🚀 Tiny 14MB Docker image
 - 🔒 Secure TLS support
 - 🌙 Dark mode support
+- 📎 **NEW**: Processes Outlook .msg files and extracts DMARC report attachments
 
 ## Installation
 
@@ -277,6 +278,26 @@ To run the container using the new filesystem processing feature, you must map a
       parse-dmarc:local
     ```
 After processing, the application will move any handled reports into a `processed` subdirectory inside your local reports directory.
+
+### Outlook .msg File Support
+
+The application now supports processing Outlook .msg files! When you place .msg files in your reports directory, the application will:
+
+1. **Extract attachments** from the .msg files
+2. **Identify DMARC reports** among the attachments
+3. **Process each DMARC report** using the same parsing logic as direct files
+4. **Archive the .msg file** after successful processing
+
+**Supported .msg file contents:**
+- DMARC reports as .xml attachments
+- DMARC reports as .xml.gz attachments  
+- DMARC reports as .zip attachments
+- Multiple DMARC reports in a single .msg file
+
+**Example:** If you receive DMARC reports as email attachments in Outlook, you can:
+1. Save the email as a .msg file
+2. Place it in your reports directory
+3. The application will automatically extract and process any DMARC reports
 
 ### Docker Compose
 

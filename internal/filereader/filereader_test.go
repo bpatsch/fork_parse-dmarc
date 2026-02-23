@@ -113,6 +113,8 @@ func TestProcessReports(t *testing.T) {
 	}
 
 
+
+
 	// Create mock logger, storage, and processor
 	log := zerolog.Nop()
 	dbFile := filepath.Join(tempDir, "test.db")
@@ -145,6 +147,8 @@ func TestProcessReports(t *testing.T) {
 			t.Errorf("Expected processed file %s to exist, but it does not", processedPath)
 		}
 	}
+
+
 
 	// b. Assert non-report file was ignored
 	if _, err := os.Stat(nonReportPath); os.IsNotExist(err) {
