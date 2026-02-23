@@ -353,6 +353,7 @@ func run(ctx context.Context, cmd *cli.Command) error {
 		}
 	}
 	return nil
+}
 
 func fetchReports(cfg *config.Config, store *storage.Storage, m *metrics.Metrics) error {
 	log.Info().Msg("fetching DMARC reports")
